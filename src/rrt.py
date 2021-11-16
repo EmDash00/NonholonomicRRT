@@ -1,9 +1,7 @@
 from collections import deque
-from typing import List
 
 import gr  # type: ignore
 import numpy as np
-from math import modf, sqrt
 from numpy import asarray, cos, ndarray, pi, sin
 from numpy.linalg import norm
 from numpy.typing import ArrayLike
