@@ -3,26 +3,15 @@ from collections import deque
 import gr  # type: ignore
 import numpy as np
 from numpy import asarray, cos, ndarray, pi, sin
-from numpy.linalg import norm
 from numpy.typing import ArrayLike
 
-from rrtutil import dist  # type: ignore
+from mtree.mtree import MTree  # type: ignore
+from rrtutil import diff
+
+buff = np.empty(3)
 
 
 class RRTNode(ndarray):
-    def diff(self, n):
-        x = self - n
-        x[2] = (x[2] + 0.5) % 1 - 0.5
-
-        return (x)
-
-    def dist(self, n):
-        a = self.diff(n)
-        return np.sqrt(np.einsum('i,i', a, a))
-
-    def dist2(self, n):
-        return norm(self[:2] - n[:2])
-
     def __new__(cls, arr: ArrayLike):
         n = asarray(arr).view(cls)
         return (n)
@@ -72,19 +61,19 @@ def draw_goal(n, tol):
     gr.updatews()
 
 
-def connect_node(n_kdtree, n: RRTNode):
+def connect_node(mtree: MTree, n: RRTNode):
+    global buff
 
-    # O(log(n)) search when its balanced.
-    kd_parent = n_kdtree.search_nn(n, dist)[0]
-    n.parent = kd_parent.data
+    n.parent = mtree.search(n)[0].obj
 
-    diff = n.diff(n.parent)
-    n[:] = n.parent + 0.03 * diff
+    # buff = diff(n, n.parent)
+    buff = n - n.parent
+    n[:] = n.parent + 0.1 * buff
+    n[2] = (n[2] + 0.5) % 1 - 0.5
 
     n.parent.children.append(n)
-    kd_parent.add(n)
+    mtree.add(n)
 
-    gr.polyline([n.parent[0], n[0]], [n.parent[1], n[1]])
-    gr.polymarker([n[0]], [n[1]])
+    # gr.polyline([n.parent[0], n[0]], [n.parent[1], n[1]])
 
     return (n)
