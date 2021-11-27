@@ -4,7 +4,7 @@ from numpy.random import rand
 from silkworm.silktime import IntervalTimer  # type: ignore
 
 import rrt
-from mtree.mtree import MTree  # type: ignore
+from mtree import MTree  # type: ignore
 from rrt import RRTNode  # type: ignore
 from rrtutil import dist, dist2  # type: ignore
 
@@ -23,10 +23,10 @@ def goal(n, tol):
 
 
 def main():
-    tol = 0.045
+    tol = 0.03
     mtree = MTree(dist, max_node_size=100)
     nodes = 1
-    t = IntervalTimer(1 / 15, start=True)
+    t = IntervalTimer(1 / 10, start=True)
 
     try:
         root = RRTNode(rand(3))
@@ -40,7 +40,7 @@ def main():
 
         while not goal(candidate, tol):
             nodes += 1
-            print(f"Min Dist|Nodes: {perf:.3f}|{nodes}", end='\r')
+            print("Min Dist|Nodes: {:.3f}|{}".format(perf, nodes), end='\r')
 
             candidate = rrt.connect_node(mtree, RRTNode(rand(3)))
 
@@ -51,7 +51,7 @@ def main():
         print(candidate)
         print(dist(candidate, goal_p))
 
-        print(f"Identified Solution in {nodes} Nodes. Visualizing...")
+        print("Identified Solution in {} Nodes. Visualizing...".format(nodes))
         gr.setlinecolorind(77)
 
         chain_length = 1

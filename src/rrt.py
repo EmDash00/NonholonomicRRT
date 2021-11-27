@@ -5,8 +5,7 @@ import numpy as np
 from numpy import asarray, cos, ndarray, pi, sin
 from numpy.typing import ArrayLike
 
-from mtree.mtree import MTree  # type: ignore
-from rrtutil import diff
+from mtree import MTree  # type: ignore
 
 buff = np.empty(3)
 
@@ -74,6 +73,6 @@ def connect_node(mtree: MTree, n: RRTNode):
     n.parent.children.append(n)
     mtree.add(n)
 
-    # gr.polyline([n.parent[0], n[0]], [n.parent[1], n[1]])
+    gr.polyline([n.parent[0], n[0]], [n.parent[1], n[1]])
 
     return (n)
