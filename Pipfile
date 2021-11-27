@@ -6,7 +6,9 @@ name = "pypi"
 [packages]
 numpy = "*"
 gr = "*"
-kdtree = "*"
+wheel = "*"
+numba = "*"
+mtree = {ref = "search_opt", git = "https://github.com/EmDash00/mtree.git"}
 
 [dev-packages]
 
