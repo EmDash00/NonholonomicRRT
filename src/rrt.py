@@ -5,9 +5,11 @@ import numpy as np
 from numpy import asarray, cos, ndarray, pi, sin
 from numpy.typing import ArrayLike
 
+from geom_prim import primative_tree
 from mtree import MTree  # type: ignore
+from rrtutil import dist, rotate
 
-buff = np.empty(3)
+diff = np.empty(3)
 
 
 class RRTNode(ndarray):
@@ -15,8 +17,11 @@ class RRTNode(ndarray):
         n = asarray(arr).view(cls)
         return (n)
 
+    # This is how you add properties to ndarray subclasses evidently.
     def __array_finalize__(self, obj):
         if obj is not None:
+            # Deques have O(1) insertion at the end, no reallactions necessary!
+            self.u = getattr(obj, 'u', np.empty(2))
             self.parent = getattr(obj, 'parent', None)
             self.children = getattr(obj, 'children', deque())
 
@@ -60,15 +65,37 @@ def draw_goal(n, tol):
     gr.updatews()
 
 
+def best_primative(nn, diff):
+    return (
+        primative_tree.search(rotate(diff, -nn[2] * 2 * pi))[0].obj
+    )
+
+
 def connect_node(mtree: MTree, n: RRTNode):
-    global buff
+    global diff
 
-    n.parent = mtree.search(n)[0].obj
+    # n.parent = mtree.search(n)[0].obj
 
-    # buff = diff(n, n.parent)
-    buff = n - n.parent
-    n[:] = n.parent + 0.1 * buff
-    n[2] = (n[2] + 0.5) % 1 - 0.5
+    # we no longer directly connect the node.
+    # nn -> nearest neighbor/node from the RRT Tree
+    nn = mtree.search(n)[0].obj
+
+    # Calculate the displacement
+
+    diff = n - nn
+    n[2] = (n[2] + 0.5) % 1 - 0.5  # Angle subtraction
+
+    # Trick: Imagine the nn is at (x = y = theta = 0) with a rotated axes
+
+    # This is the frame of reference of an observer at nn with angle theta
+    # From the perspective of the world frame,
+    # The x axis will be rotated counterclockwise by theta
+
+    # Implementation: Calculate the displacement by subtracting
+    # Find the best geometric primative given the diff rotated -theta
+    # Rotate the primative back and add it.
+
+    n.parent = nn + rotate(best_primative(nn, diff), nn[2])
 
     n.parent.children.append(n)
     mtree.add(n)
