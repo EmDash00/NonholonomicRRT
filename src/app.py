@@ -23,7 +23,7 @@ def goal(n, tol):
 
 
 def main():
-    tol = 0.03
+    tol = 0.05
     mtree = MTree(dist, max_node_size=100)
     nodes = 1
     t = IntervalTimer(1 / 10, start=True)
