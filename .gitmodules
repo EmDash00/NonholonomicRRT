@@ -1,0 +1,3 @@
+[submodule "src/mtree"]
+	path = src/mtree
+	url = https://github.com/tburette/mtree.git
