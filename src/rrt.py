@@ -95,9 +95,10 @@ def connect_node(mtree: MTree, n: RRTNode):
     # Find the best geometric primative given the diff rotated -theta
     # Rotate the primative back and add it.
 
-    n.parent = nn + rotate(best_primative(nn, diff), nn[2])
-
+    n[:] = nn + rotate(best_primative(nn, diff), nn[2])
+    n.parent = nn
     n.parent.children.append(n)
+
     mtree.add(n)
 
     gr.polyline([n.parent[0], n[0]], [n.parent[1], n[1]])
