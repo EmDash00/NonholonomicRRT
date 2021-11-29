@@ -1,24 +1,13 @@
-from collections import deque
-
 import gr  # type: ignore
 import numpy as np
-from numpy import asarray, cos, ndarray, pi, sin
-from numpy.typing import ArrayLike
+from numpy import cos, pi, sin
+from numpy import floor
 
+from geom_prim import primative_tree, RRTNode, prims
 from mtree import MTree  # type: ignore
+from rrtutil import rotate, rotate_arc
 
-buff = np.empty(3)
-
-
-class RRTNode(ndarray):
-    def __new__(cls, arr: ArrayLike):
-        n = asarray(arr).view(cls)
-        return (n)
-
-    def __array_finalize__(self, obj):
-        if obj is not None:
-            self.parent = getattr(obj, 'parent', None)
-            self.children = getattr(obj, 'children', deque())
+diff = np.empty(3)
 
 
 def setup_graphics():
@@ -60,19 +49,55 @@ def draw_goal(n, tol):
     gr.updatews()
 
 
+def best_primative(nn, diff):
+    return (
+        primative_tree.search(rotate(diff, -nn[2] * 2 * pi))[0].obj
+    )
+
+
 def connect_node(mtree: MTree, n: RRTNode):
-    global buff
+    global diff
 
-    n.parent = mtree.search(n)[0].obj
+    # n.parent = mtree.search(n)[0].obj
 
-    # buff = diff(n, n.parent)
-    buff = n - n.parent
-    n[:] = n.parent + 0.1 * buff
-    n[2] = (n[2] + 0.5) % 1 - 0.5
+    # we no longer directly connect the node.
+    # nn -> nearest neighbor/node from the RRT Tree
+    nn = mtree.search(n)[0].obj
 
+    # Calculate the displacement
+
+    diff = n - nn
+    diff[2] += 0.5
+    diff[2] -= (floor(diff[2]) + 0.5)
+
+    # Trick: Imagine the nn is at (x = y = theta = 0) with a rotated axes
+
+    # This is the frame of reference of an observer at nn with angle theta
+    # From the perspective of the world frame,
+    # The x axis will be rotated counterclockwise by theta
+
+    # Implementation: Calculate the displacement by subtracting
+    # Find the best geometric primative given the diff rotated -theta
+    # Rotate the primative back and add it.
+
+    best = rotate(best_primative(nn, diff), nn[2] * 2 * pi)
+
+    n[:] = nn + best
+    n.u = best.u
+
+    n.parent = nn
     n.parent.children.append(n)
+
     mtree.add(n)
 
-    gr.polyline([n.parent[0], n[0]], [n.parent[1], n[1]])
+    gr.polymarker([n[0]], [n[1]])
+    curve = rotate_arc(
+        prims[n.u[2][0]:n.u[2][1], n.u[3]][:, :2],
+        -nn[2] * 2 * pi
+    )
+
+    gr.polyline(curve[:, 0] + nn[0], curve[:, 1] + nn[1])
+    gr.updatews()
+    input()
 
     return (n)
