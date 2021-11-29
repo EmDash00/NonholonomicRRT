@@ -12,23 +12,23 @@ I don't intend to ever support other versions. Use pyenv or pyenv-win if you nee
 After installing pyenv or pyenv-win, install required Python. Any version of 3.8 should work.
 
 ```shell
-   pyenv install 3.8.12
-   pyenv rehash
-   pyenv shell 3.8.12
+pyenv install 3.8.12
+pyenv rehash
+pyenv shell 3.8.12
 ```
 
 Install Python's preferred package manager, pipenv.
 
 ```shell
-   pip install --user pipenv
+pip install --user pipenv
 ```
 
 Then download and install dependencies.
 
 ```shell
-   git clone https://github.com/EmDash00/NonholonomicRRT.git
-   cd NonholonomicRRT
-   pipenv install
+git clone https://github.com/EmDash00/NonholonomicRRT.git
+cd NonholonomicRRT
+pipenv install
 ```
 
 You should now be able to run the app with `pipenv run python3 src/app.py`.
