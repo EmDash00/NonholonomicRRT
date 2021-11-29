@@ -4,9 +4,10 @@ from numpy import cos, pi, sin
 
 from geom_prim import primative_tree, RRTNode, prims
 from mtree import MTree  # type: ignore
-from rrtutil import rotate, norm
+from rrtutil import rotate, rotate_arc
 
 diff = np.empty(3)
+
 
 def setup_graphics():
     gr.setviewport(xmin=0, xmax=1, ymin=0, ymax=1)
@@ -49,7 +50,7 @@ def draw_goal(n, tol):
 
 def best_primative(nn, diff):
     return (
-        primative_tree.search(rotate(diff, -nn[2] * 2 * pi))[0].obj
+        primative_tree.search(rotate(diff, nn[2] * 2 * pi))[0].obj
     )
 
 
@@ -77,7 +78,7 @@ def connect_node(mtree: MTree, n: RRTNode):
     # Find the best geometric primative given the diff rotated -theta
     # Rotate the primative back and add it.
 
-    best = rotate(best_primative(nn, diff), nn[2])
+    best = rotate(best_primative(nn, diff), nn[2] * 2 * pi)
 
     n[:] = nn + best
     n.u = best.u
@@ -87,6 +88,14 @@ def connect_node(mtree: MTree, n: RRTNode):
 
     mtree.add(n)
 
-    gr.polyline([n.parent[0], n[0]], [n.parent[1], n[1]])
+    gr.polymarker([n[0]], [n[1]])
+    curve = rotate_arc(
+        prims[n.u[2][0]:n.u[2][1], n.u[3]][:, :2],
+        -nn[2] * 2 * pi
+    )
+
+    gr.polyline(curve[:, 0] + nn[0], curve[:, 1] + nn[1])
+    gr.updatews()
+    input()
 
     return (n)

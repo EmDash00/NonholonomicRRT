@@ -6,6 +6,7 @@ from rrtutil import dist, dist2
 from mtree import MTree  # type: ignore
 from os import path
 
+
 class RRTNode(ndarray):
     def __new__(cls, arr: ArrayLike):
         n = asarray(arr).view(cls)
@@ -22,7 +23,6 @@ class RRTNode(ndarray):
             self.children = getattr(obj, 'children', deque())
 
 
-
 L = 0.1
 v = 0.5
 T = 0.1  # Amount of time to simulate into the future
@@ -31,6 +31,7 @@ N_phi = 21  # Number of turning angles to generate
 N_t = 100  # Resolution of Euler integration
 dt = T / N_t
 phi = np.linspace(-0.4 * np.pi, 0.4 * np.pi, N_phi)
+
 
 def generate_primatives():
     primatives = np.zeros((N_t, N_phi, 3))
@@ -53,7 +54,9 @@ def generate_primatives():
 
     # Negative v is just a sign change.
     # Don't account for
+    # np.save("primatives.npy", np.concatenate((primatives, -primatives)))
     np.save("primatives.npy", np.concatenate((primatives, -primatives)))
+
 
 if __name__ == "__main__":
     generate_primatives()
@@ -71,7 +74,7 @@ for t in range(N_t):
         n.u[0] = phi[i] / (2 * np.pi)
         n.u[1] = v
 
-        n.u[2] = (0, t + 1)
+        n.u[2] = (0, t)
         n.u[3] = i
 
         primative_tree.add(n)
@@ -82,7 +85,7 @@ for t in range(N_t, 2 * N_t):
         n.u[0] = phi[i] / (2 * np.pi)
         n.u[1] = -v
 
-        n.u[2] = (10, t + 1)
+        n.u[2] = (N_t, t)
         n.u[3] = i
 
         primative_tree.add(n)
