@@ -1,30 +1,12 @@
-from collections import deque
-
 import gr  # type: ignore
 import numpy as np
-from numpy import asarray, cos, ndarray, pi, sin
-from numpy.typing import ArrayLike
+from numpy import cos, pi, sin
 
-from geom_prim import primative_tree
+from geom_prim import primative_tree, RRTNode, prims
 from mtree import MTree  # type: ignore
-from rrtutil import dist, rotate
+from rrtutil import rotate, norm
 
 diff = np.empty(3)
-
-
-class RRTNode(ndarray):
-    def __new__(cls, arr: ArrayLike):
-        n = asarray(arr).view(cls)
-        return (n)
-
-    # This is how you add properties to ndarray subclasses evidently.
-    def __array_finalize__(self, obj):
-        if obj is not None:
-            # Deques have O(1) insertion at the end, no reallactions necessary!
-            self.u = getattr(obj, 'u', np.empty(2))
-            self.parent = getattr(obj, 'parent', None)
-            self.children = getattr(obj, 'children', deque())
-
 
 def setup_graphics():
     gr.setviewport(xmin=0, xmax=1, ymin=0, ymax=1)
@@ -95,7 +77,11 @@ def connect_node(mtree: MTree, n: RRTNode):
     # Find the best geometric primative given the diff rotated -theta
     # Rotate the primative back and add it.
 
-    n[:] = nn + rotate(best_primative(nn, diff), nn[2])
+    best = rotate(best_primative(nn, diff), nn[2])
+
+    n[:] = nn + best
+    n.u = best.u
+
     n.parent = nn
     n.parent.children.append(n)
 

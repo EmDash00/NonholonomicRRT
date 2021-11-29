@@ -3,6 +3,11 @@ from numpy import sqrt, floor, cos, sin
 
 
 @njit(fastmath=True, cache=True)
+def norm(n):
+    return sqrt(n[0]**2 + n[1]**2 + n[2]**2)
+
+
+@njit(fastmath=True, cache=True)
 def diff(n1, n2):
     x = n1 - n2
     x[2] += 0.5

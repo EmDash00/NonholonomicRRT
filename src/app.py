@@ -5,7 +5,8 @@ from silkworm.silktime import IntervalTimer  # type: ignore
 
 import rrt
 from mtree import MTree  # type: ignore
-from rrt import RRTNode  # type: ignore
+from geom_prim import RRTNode  # type: ignore
+from geom_prim import primative_tree
 from rrtutil import dist, dist2  # type: ignore
 
 goal_p = np.array([0.8, 0.8, 0.1])
@@ -23,7 +24,7 @@ def goal(n, tol):
 
 
 def main():
-    tol = 0.05
+    tol = 0.03
     mtree = MTree(dist, max_node_size=100)
     nodes = 1
     t = IntervalTimer(1 / 10, start=True)
