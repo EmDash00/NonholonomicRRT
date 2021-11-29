@@ -12,6 +12,7 @@ mtree = {ref = "search_opt", git = "https://github.com/EmDash00/mtree.git"}
 kdtree = "*"
 jupyterlab = "*"
 matplotlib = "*"
+scipy = "*"
 
 [dev-packages]
 

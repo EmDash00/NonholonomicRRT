@@ -1,5 +1,5 @@
 from numba import njit  # type: ignore
-from numpy import sqrt, floor, cos, sin
+from numpy import sqrt, floor, cos, sin, array
 
 
 @njit(fastmath=True, cache=True)
@@ -51,5 +51,19 @@ def rotate(n, theta):
 
     n[0] = n0 * c + n1 * s
     n[1] = -n0 * s + n1 * c
+
+    return(n)
+
+
+@njit(fastmath=True, cache=True)
+def rotate_arc(n, theta):
+
+    R = array([
+        [cos(theta), -sin(theta)],
+        [sin(theta), cos(theta)]
+    ])
+
+    for i in range(n.shape[0]):
+        n[i][:] = R @ n[i]
 
     return(n)
