@@ -1,6 +1,7 @@
 import gr  # type: ignore
 import numpy as np
 from numpy import cos, pi, sin
+from numpy import floor
 
 from geom_prim import primative_tree, RRTNode, prims
 from mtree import MTree  # type: ignore
@@ -50,7 +51,7 @@ def draw_goal(n, tol):
 
 def best_primative(nn, diff):
     return (
-        primative_tree.search(rotate(diff, nn[2] * 2 * pi))[0].obj
+        primative_tree.search(rotate(diff, -nn[2] * 2 * pi))[0].obj
     )
 
 
@@ -66,7 +67,8 @@ def connect_node(mtree: MTree, n: RRTNode):
     # Calculate the displacement
 
     diff = n - nn
-    n[2] = (n[2] + 0.5) % 1 - 0.5  # Angle subtraction
+    diff[2] += 0.5
+    diff[2] -= (floor(diff[2]) + 0.5)
 
     # Trick: Imagine the nn is at (x = y = theta = 0) with a rotated axes
 

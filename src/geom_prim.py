@@ -54,8 +54,8 @@ def generate_primatives():
 
     # Negative v is just a sign change.
     # Don't account for
-    # np.save("primatives.npy", np.concatenate((primatives, -primatives)))
     np.save("primatives.npy", np.concatenate((primatives, -primatives)))
+    # np.save("primatives.npy", primatives)
 
 
 if __name__ == "__main__":
