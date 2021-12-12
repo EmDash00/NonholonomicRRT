@@ -1,5 +1,24 @@
 from numba import njit  # type: ignore
 from numpy import sqrt, floor, cos, sin, array
+from collections import deque
+from numpy import ndarray, asarray
+from numpy.typing import ArrayLike
+
+
+class RRTNode(ndarray):
+    def __new__(cls, arr: ArrayLike):
+        n = asarray(arr).view(cls)
+        return (n)
+
+    # This is how you add properties to ndarray subclasses evidently.
+    def __array_finalize__(self, obj):
+        if obj is not None:
+            # [phi, v, (start_t_idx, stop_t_idx), phi_idx]
+            self.u = getattr(obj, 'u', [None] * 4)
+            self.parent = getattr(obj, 'parent', None)
+
+            # Deques have O(1) insertion at the end, no reallactions necessary!
+            self.children = getattr(obj, 'children', deque())
 
 
 @njit(fastmath=True, cache=True)
