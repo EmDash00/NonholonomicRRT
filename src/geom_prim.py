@@ -55,7 +55,6 @@ def generate_primatives():
 
 if __name__ == "__main__":
     generate_primatives()
-
 if not path.exists("./primatives.npy"):
     generate_primatives()
 
@@ -80,7 +79,7 @@ for i in range(N_v):
 
         n_neg = RRTNode(prims_neg[-1, i, j])
         n_neg.u[0] = phi[j]
-        n_neg.u[1] = v
+        n_neg.u[1] = -v
 
         n_neg.u[2] = prims_neg[:, i, j]
         n_neg.u[3] = i

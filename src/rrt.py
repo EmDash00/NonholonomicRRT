@@ -8,6 +8,7 @@ from mtree import MTree  # type: ignore
 from rrtutil import RRTNode, rotate, rotate_arc
 
 diff = np.empty(3)
+rot = np.empty(3)
 
 
 def setup_graphics():
@@ -16,6 +17,8 @@ def setup_graphics():
 
     gr.setmarkertype(gr.MARKERTYPE_SOLID_CIRCLE)
     gr.setmarkercolorind(86)  # Light grey
+    gr.setarrowstyle(6)
+    gr.setarrowsize(0.5)
 
     gr.updatews()
 
@@ -57,6 +60,7 @@ def best_primative(nn, diff):
 
 def connect_node(mtree: MTree, n: RRTNode):
     global diff
+    global rot
 
     # n.parent = mtree.search(n)[0].obj
 
@@ -80,23 +84,33 @@ def connect_node(mtree: MTree, n: RRTNode):
     # Find the best geometric primative given the diff rotated -theta
     # Rotate the primative back and add it.
 
-    best = rotate(best_primative(nn, diff), nn[2] * 2 * pi)
+    best_prim = best_primative(nn, diff)
 
-    n[:] = nn + best
-    n.u = best.u
+    curve = rotate_arc(
+        best_prim.u[2][:, :2].copy(),
+        nn[2] * 2 * pi
+    )
+
+    n[:2] = nn[:2] + curve[-1]
+    n.u = best_prim.u
+    n[2] = nn[2] + best_prim.u[2][-1, 2]
+
+    dx = np.cos(n[2] * 2 * pi) / 30
+    dy = np.sin(n[2] * 2 * pi) / 30
 
     n.parent = nn
     n.parent.children.append(n)
 
     mtree.add(n)
 
-    gr.polymarker([n[0]], [n[1]])
-    curve = rotate_arc(
-        n.u[2][:-1, :2],
-        -nn[2] * 2 * pi
-    )
+    gr.setlinecolorind(20)
+    gr.drawarrow(n[0], n[1], n[0] + dx, n[1] + dy)
+    gr.setlinecolorind(1296)
 
     gr.polyline(curve[:, 0] + nn[0], curve[:, 1] + nn[1])
+
+    gr.polymarker([n[0]], [n[1]])
+
     gr.updatews()
     input()
 
