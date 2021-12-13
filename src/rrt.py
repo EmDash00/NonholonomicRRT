@@ -7,9 +7,9 @@ from geom_prim import primative_tree
 from mtree import MTree  # type: ignore
 from rrtutil import RRTNode, rotate, rotate_arc
 
+DEBUG = False
+CURVE_RES = 3
 diff = np.empty(3)
-rot = np.empty(3)
-
 
 def setup_graphics():
     gr.setviewport(xmin=0, xmax=1, ymin=0, ymax=1)
@@ -60,7 +60,6 @@ def best_primative(nn, diff):
 
 def connect_node(mtree: MTree, n: RRTNode):
     global diff
-    global rot
 
     # n.parent = mtree.search(n)[0].obj
 
@@ -86,32 +85,41 @@ def connect_node(mtree: MTree, n: RRTNode):
 
     best_prim = best_primative(nn, diff)
 
+    # The u property encodes some metadata about the node
+    # u[0] and u[1] are the angle and velocity necessary to reach the node
+    # u[2] is the geometric primative that should be added to the parent
+    # to reach this node
+    # u[3] is the index of the velocity
+
+    # Rotate the geometric primative so that tangents line up
     curve = rotate_arc(
-        best_prim.u[2][:, :2].copy(),
+        best_prim.u[2][::2, :2].copy(),
         nn[2] * 2 * pi
     )
 
     n[:2] = nn[:2] + curve[-1]
     n.u = best_prim.u
     n[2] = nn[2] + best_prim.u[2][-1, 2]
-
-    dx = np.cos(n[2] * 2 * pi) / 30
-    dy = np.sin(n[2] * 2 * pi) / 30
+    n[2] -= floor(n[2]) # normalize angles to [0, 1] 1.1 -> 1
 
     n.parent = nn
     n.parent.children.append(n)
 
     mtree.add(n)
 
-    gr.setlinecolorind(20)
-    gr.drawarrow(n[0], n[1], n[0] + dx, n[1] + dy)
-    gr.setlinecolorind(1296)
+    if DEBUG:
+        dx = np.cos(n[2] * 2 * pi) / 30
+        dy = np.sin(n[2] * 2 * pi) / 30
+
+        gr.setlinecolorind(20)
+        gr.drawarrow(n[0], n[1], n[0] + dx, n[1] + dy)
+        gr.setlinecolorind(1296)
+
+        gr.polymarker([n[0]], [n[1]])
+
+        input()
+        gr.updatews()
 
     gr.polyline(curve[:, 0] + nn[0], curve[:, 1] + nn[1])
-
-    gr.polymarker([n[0]], [n[1]])
-
-    gr.updatews()
-    input()
 
     return (n)
