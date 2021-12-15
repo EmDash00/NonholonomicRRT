@@ -13,7 +13,7 @@ diff = np.empty(3)
 
 def setup_graphics():
     gr.setviewport(xmin=0, xmax=1, ymin=0, ymax=1)
-    gr.setwindow(xmin=0, xmax=1, ymin=0, ymax=1)
+    gr.setwindow(xmin=-0.1, xmax=1.1, ymin=-0.1, ymax=1.1)
 
     gr.setmarkertype(gr.MARKERTYPE_SOLID_CIRCLE)
     gr.setmarkercolorind(86)  # Light grey
@@ -88,9 +88,8 @@ def connect_node(mtree: MTree, n: RRTNode):
 
     # The u property encodes some metadata about the node
     # u[0] and u[1] are the angle and velocity necessary to reach the node
-    # u[2] is the geometric primative that should be added to the parent
-    # to reach this node
-    # u[3] is the index of the velocity
+    # n.path is the path necessary to get from n.parent to n
+    # n.primative is the primative that encodes the path
 
     # Rotate the geometric primative so that tangents line up
     path = rotate_arc(

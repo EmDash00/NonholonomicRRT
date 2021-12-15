@@ -34,6 +34,11 @@ def norm_squared(n):
 
 
 @njit(fastmath=True, cache=True)
+def norm2_squared(n):
+    return n[0]**2 + n[1]**2
+
+
+@njit(fastmath=True, cache=True)
 def diff(n1, n2):
     x = n1 - n2
     x[2] += 0.5
