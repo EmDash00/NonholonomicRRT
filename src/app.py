@@ -1,5 +1,3 @@
-from threading import Thread
-
 import gr  # type: ignore
 import numpy as np
 from mtree import MTree  # type: ignore
@@ -9,7 +7,7 @@ import rrt
 import workspace
 from geom_prim import RRTNode  # type: ignore
 from geom_prim import primative_tree
-from rrtutil import dist, dist2, norm2_squared  # type: ignore
+from rrtutil import goal_dist, dist, dist2, norm2_squared  # type: ignore
 
 goal_p = np.array([0.8, 0.8, 0.1])
 
@@ -19,7 +17,7 @@ perf = np.inf
 def goal(n, tol):
     global perf
 
-    d = dist(n, goal_p)
+    d = goal_dist(n, goal_p)
     perf = min(perf, d)
 
     return (d < tol)
@@ -32,12 +30,8 @@ def sample(min_dist, tol):
     of sampling in the goal region vs. the entire workspace is a function
     of the minimum distance to the goal. Intuitively this is a crude way
     to implement exploration vs. exploitation.
+    """
 
-    Note: I couldn't get this to work properly. While it does sample
-    more often around the goal, this doesn't seem to improve performance due
-    to kinematic constraints.
-    """
-    """
     p = tol / min_dist
     r = min_dist
 
@@ -52,19 +46,12 @@ def sample(min_dist, tol):
         return(x)
     else:
         return (rand(3))
-    """
-
-    return (rand(3))
 
 
 def main():
-    tol = 0.04
+    tol = 0.01
     mtree = MTree(dist, max_node_size=100)
     nodes = 1
-
-    gr.updatews()
-    thread = Thread(target=workspace.updatews, daemon=True)
-    thread.start()
 
     try:
         root = RRTNode(rand(3))
