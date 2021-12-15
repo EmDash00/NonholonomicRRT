@@ -3,19 +3,22 @@ import numpy as np
 from numpy import cos, pi, sin
 from numpy import floor
 
-from geom_prim import primative_tree, RRTNode, prims
+from geom_prim import primative_tree, N_v
 from mtree import MTree  # type: ignore
-from rrtutil import rotate, rotate_arc
+from rrtutil import RRTNode, rotate, rotate_arc, map_index
 
+DEBUG = False
+CURVE_RES = 3
 diff = np.empty(3)
-
 
 def setup_graphics():
     gr.setviewport(xmin=0, xmax=1, ymin=0, ymax=1)
-    gr.setwindow(xmin=0, xmax=1, ymin=0, ymax=1)
+    gr.setwindow(xmin=-0.1, xmax=1.1, ymin=-0.1, ymax=1.1)
 
     gr.setmarkertype(gr.MARKERTYPE_SOLID_CIRCLE)
     gr.setmarkercolorind(86)  # Light grey
+    gr.setarrowstyle(6)
+    gr.setarrowsize(0.5)
 
     gr.updatews()
 
@@ -50,8 +53,9 @@ def draw_goal(n, tol):
 
 
 def best_primative(nn, diff):
+    i = map_index(diff, N_v)
     return (
-        primative_tree.search(rotate(diff, -nn[2] * 2 * pi))[0].obj
+        primative_tree[i].search(rotate(diff, -nn[2] * 2 * pi))[0].obj
     )
 
 
@@ -80,24 +84,45 @@ def connect_node(mtree: MTree, n: RRTNode):
     # Find the best geometric primative given the diff rotated -theta
     # Rotate the primative back and add it.
 
-    best = rotate(best_primative(nn, diff), nn[2] * 2 * pi)
+    best_prim = best_primative(nn, diff)
 
-    n[:] = nn + best
-    n.u = best.u
+    # The u property encodes some metadata about the node
+    # u[0] and u[1] are the angle and velocity necessary to reach the node
+    # n.path is the path necessary to get from n.parent to n
+    # n.primative is the primative that encodes the path
+
+    # Rotate the geometric primative so that tangents line up
+    path = rotate_arc(
+        best_prim.primative[:, :2].copy(),
+        nn[2] * 2 * pi
+    ) + nn[:2]
+
+    n[:2] = path[-1]
+    n[2] = nn[2] + best_prim.primative[-1, 2]
+    n[2] -= floor(n[2]) # normalize angles to [0, 1] 1.1 -> 1
+
+    n.u = best_prim.u
+
+    n.path = path
 
     n.parent = nn
     n.parent.children.append(n)
 
     mtree.add(n)
 
-    gr.polymarker([n[0]], [n[1]])
-    curve = rotate_arc(
-        prims[n.u[2][0]:n.u[2][1], n.u[3]][:, :2],
-        -nn[2] * 2 * pi
-    )
+    if DEBUG:
+        dx = np.cos(n[2] * 2 * pi) / 30
+        dy = np.sin(n[2] * 2 * pi) / 30
 
-    gr.polyline(curve[:, 0] + nn[0], curve[:, 1] + nn[1])
-    gr.updatews()
-    input()
+        gr.setlinecolorind(20)
+        gr.drawarrow(n[0], n[1], n[0] + dx, n[1] + dy)
+        gr.setlinecolorind(1296)
+
+        gr.polymarker([n[0]], [n[1]])
+
+        input()
+        gr.updatews()
+
+    gr.polyline(n.path[::3, 0], n.path[::3, 1])
 
     return (n)
