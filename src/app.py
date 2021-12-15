@@ -1,7 +1,9 @@
 import gr  # type: ignore
 import numpy as np
 from numpy.random import rand
-from silkworm.silktime import IntervalTimer  # type: ignore
+from threading import Thread
+from ctypes import CFUNCTYPE
+from time import perf_counter, sleep
 
 import rrt
 from mtree import MTree  # type: ignore
@@ -23,11 +25,27 @@ def goal(n, tol):
     return (d < tol)
 
 
+@CFUNCTYPE(None)
+def updatews():
+    t0 = 0
+
+    while True:
+        t0 = perf_counter()
+        sleep(0.09)
+
+        while perf_counter() - t0 < 0.1:
+            pass
+
+        gr.updatews()
+
 def main():
     tol = 0.04
     mtree = MTree(dist, max_node_size=100)
     nodes = 1
-    t = IntervalTimer(1 / 10, start=True)
+
+    gr.updatews()
+    thread = Thread(target=updatews, daemon=True)
+    thread.start()
 
     try:
         root = RRTNode(rand(3))
@@ -45,9 +63,6 @@ def main():
 
             candidate = rrt.connect_node(mtree, RRTNode(rand(3)))
 
-            if t.tick():
-                gr.updatews()
-
         # Candidate is the goal.
         print(candidate)
         print(dist(candidate, goal_p))
@@ -62,7 +77,6 @@ def main():
 
             gr.polymarker([candidate[0]], [candidate[1]])
             candidate = candidate.parent
-            gr.updatews()
 
         print("Solution visualized. Chain length:", chain_length)
         input()
