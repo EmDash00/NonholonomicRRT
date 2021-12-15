@@ -14,7 +14,9 @@ class RRTNode(ndarray):
     def __array_finalize__(self, obj):
         if obj is not None:
             # [phi, v, (start_t_idx, stop_t_idx), phi_idx]
-            self.u = getattr(obj, 'u', [None] * 4)
+            self.u = getattr(obj, 'u', [None] * 2)
+            self.primative = getattr(obj, 'primative', None)
+            self.path = getattr(obj, 'path', None)
             self.parent = getattr(obj, 'parent', None)
 
             # Deques have O(1) insertion at the end, no reallactions necessary!

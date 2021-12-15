@@ -3,9 +3,9 @@ import numpy as np
 from numpy import cos, pi, sin
 from numpy import floor
 
-from geom_prim import primative_tree
+from geom_prim import primative_tree, N_v
 from mtree import MTree  # type: ignore
-from rrtutil import RRTNode, rotate, rotate_arc
+from rrtutil import RRTNode, rotate, rotate_arc, norm
 
 DEBUG = False
 CURVE_RES = 3
@@ -53,8 +53,10 @@ def draw_goal(n, tol):
 
 
 def best_primative(nn, diff):
+    dist = norm(diff)
+    i = min(int(floor(400 / 0.6 * dist**2)), N_v - 1)
     return (
-        primative_tree[50].search(rotate(diff, -nn[2] * 2 * pi))[0].obj
+        primative_tree[i].search(rotate(diff, -nn[2] * 2 * pi))[0].obj
     )
 
 
@@ -92,15 +94,18 @@ def connect_node(mtree: MTree, n: RRTNode):
     # u[3] is the index of the velocity
 
     # Rotate the geometric primative so that tangents line up
-    curve = rotate_arc(
-        best_prim.u[2][::2, :2].copy(),
+    path = rotate_arc(
+        best_prim.primative[:, :2].copy(),
         nn[2] * 2 * pi
-    )
+    ) + nn[:2]
 
-    n[:2] = nn[:2] + curve[-1]
-    n.u = best_prim.u
-    n[2] = nn[2] + best_prim.u[2][-1, 2]
+    n[:2] = path[-1]
+    n[2] = nn[2] + best_prim.primative[-1, 2]
     n[2] -= floor(n[2]) # normalize angles to [0, 1] 1.1 -> 1
+
+    n.u = best_prim.u
+
+    n.path = path
 
     n.parent = nn
     n.parent.children.append(n)
@@ -120,6 +125,6 @@ def connect_node(mtree: MTree, n: RRTNode):
         input()
         gr.updatews()
 
-    gr.polyline(curve[:, 0] + nn[0], curve[:, 1] + nn[1])
+    gr.polyline(n.path[::3, 0], n.path[::3, 1])
 
     return (n)

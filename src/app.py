@@ -58,8 +58,7 @@ def main():
         chain_length = 1
         while candidate.parent is not None:
             chain_length += 1
-            gr.polyline([candidate[0], candidate.parent[0]],
-                        [candidate[1], candidate.parent[1]])
+            gr.polyline(candidate.path[:, 0], candidate.path[:, 1])
 
             gr.polymarker([candidate[0]], [candidate[1]])
             candidate = candidate.parent
