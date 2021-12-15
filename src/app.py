@@ -1,12 +1,12 @@
+from threading import Thread
+
 import gr  # type: ignore
 import numpy as np
+from mtree import MTree  # type: ignore
 from numpy.random import rand
-from threading import Thread
-from ctypes import CFUNCTYPE
-from time import perf_counter, sleep
 
 import rrt
-from mtree import MTree  # type: ignore
+import workspace
 from geom_prim import RRTNode  # type: ignore
 from geom_prim import primative_tree
 from rrtutil import dist, dist2, norm2_squared  # type: ignore
@@ -25,30 +25,6 @@ def goal(n, tol):
     return (d < tol)
 
 
-@CFUNCTYPE(None)
-def updatews():
-    """
-    This function is the target of a daemon thread that updates the GR
-    workspace. I assume there's some buffer that all the draw events get
-    loaded into. This flushes it onto the screen.
-
-    There's a couple caveats about how this should be done. I use the
-    @CFUNCTYPE decorator from ctypes to make this a native C function. This
-    means that it won't hold the GIL.
-
-    https://realpython.com/python-gil/
-
-    We also sleep for the majority of this thread when not updating the
-    workspace. The use of sleeps allows the OS thread scheduler to run
-    other threads.
-
-    I chose an update rate of 10 FPS for performance reasons.
-    """
-    while True:
-        sleep(0.1)
-        gr.updatews()
-
-
 def sample(min_dist, tol):
     """
     Use Goal-Region Biased Sampling. This is a form of rejection sampling
@@ -61,7 +37,6 @@ def sample(min_dist, tol):
     more often around the goal, this doesn't seem to improve performance due
     to kinematic constraints.
     """
-
     """
     p = tol / min_dist
     r = min_dist
@@ -79,7 +54,8 @@ def sample(min_dist, tol):
         return (rand(3))
     """
 
-    return(rand(3))
+    return (rand(3))
+
 
 def main():
     tol = 0.04
@@ -87,7 +63,7 @@ def main():
     nodes = 1
 
     gr.updatews()
-    thread = Thread(target=updatews, daemon=True)
+    thread = Thread(target=workspace.updatews, daemon=True)
     thread.start()
 
     try:
@@ -95,9 +71,9 @@ def main():
         mtree.add(root)
         goal(root, tol)
 
-        rrt.setup_graphics()
-        rrt.draw_root(root)
-        rrt.draw_goal([0.8, 0.8], tol)
+        workspace.setup_graphics()
+        workspace.draw_root(root)
+        workspace.draw_goal([0.8, 0.8], tol)
 
         candidate = rrt.connect_node(mtree, RRTNode(sample(perf, tol)))
 
@@ -108,19 +84,12 @@ def main():
             candidate = rrt.connect_node(mtree, RRTNode(sample(perf, tol)))
 
         # Candidate is the goal.
-        print(candidate)
-        print(dist(candidate, goal_p))
+        print("Found solution:", candidate)
+        print("Solution distance to goal:", dist(candidate, goal_p))
 
         print("Identified Solution in {} Nodes. Visualizing...".format(nodes))
-        gr.setlinecolorind(77)
 
-        chain_length = 1
-        while candidate.parent is not None:
-            chain_length += 1
-            gr.polyline(candidate.path[:, 0], candidate.path[:, 1])
-
-            gr.polymarker([candidate[0]], [candidate[1]])
-            candidate = candidate.parent
+        chain_length = workspace.draw_soln(candidate)
 
         print("Solution visualized. Chain length:", chain_length)
         input()

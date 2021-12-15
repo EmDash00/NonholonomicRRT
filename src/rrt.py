@@ -11,46 +11,6 @@ DEBUG = False
 CURVE_RES = 3
 diff = np.empty(3)
 
-def setup_graphics():
-    gr.setviewport(xmin=0, xmax=1, ymin=0, ymax=1)
-    gr.setwindow(xmin=-0.1, xmax=1.1, ymin=-0.1, ymax=1.1)
-
-    gr.setmarkertype(gr.MARKERTYPE_SOLID_CIRCLE)
-    gr.setmarkercolorind(86)  # Light grey
-    gr.setarrowstyle(6)
-    gr.setarrowsize(0.5)
-
-    gr.updatews()
-
-
-def draw_root(n):
-    gr.setmarkersize(1)
-    gr.setmarkercolorind(60)
-    gr.polymarker([n[0]], [n[1]])
-    gr.setmarkercolorind(86)  # Light grey
-
-    gr.setmarkersize(0.12)
-    gr.updatews()
-
-
-def draw_goal(n, tol):
-    gr.setmarkersize(1)
-    gr.setmarkercolorind(30)
-    gr.polymarker([n[0]], [n[1]])
-
-    x = tol * cos(2 * pi * np.linspace(0, 1, num=1000)) + n[0]
-    y = tol * sin(2 * pi * np.linspace(0, 1, num=1000)) + n[1]
-
-    gr.setlinetype(gr.LINETYPE_DOTTED)
-    gr.polyline(x, y)
-
-    gr.setlinetype(gr.LINETYPE_SOLID)
-    gr.setmarkercolorind(86)  # Light grey
-
-    gr.setmarkersize(0.12)
-
-    gr.updatews()
-
 
 def best_primative(nn, diff):
     i = map_index(diff, N_v)
