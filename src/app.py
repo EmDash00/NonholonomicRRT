@@ -27,16 +27,33 @@ def goal(n, tol):
 
 @CFUNCTYPE(None)
 def updatews():
+    """
+    This function is the target of a daemon thread that updates the GR
+    workspace. I assume there's some buffer that all the draw events get
+    loaded into. This flushes it onto the screen.
+
+    There's a couple caveats about how this should be done. I use the
+    @CFUNCTYPE decorator from ctypes to make this a native C function. This
+    means that it won't hold the GIL.
+
+    https://realpython.com/python-gil/
+
+    We also sleep for the majority of this thread when not updating the
+    workspace. The use of sleeps allows the OS thread scheduler to run
+    other threads.
+
+    I chose an update rate of 10 FPS for performance reasons.
+    """
     t0 = 0
 
     while True:
         t0 = perf_counter()
-        sleep(0.09)
-
-        while perf_counter() - t0 < 0.1:
-            pass
-
+        sleep(0.1)
         gr.updatews()
+
+
+def sample():
+    return rand(3)
 
 def main():
     tol = 0.04
@@ -48,7 +65,7 @@ def main():
     thread.start()
 
     try:
-        root = RRTNode(rand(3))
+        root = RRTNode(sample())
         mtree.add(root)
 
         rrt.setup_graphics()

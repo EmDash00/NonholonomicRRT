@@ -1,5 +1,5 @@
 from numba import njit  # type: ignore
-from numpy import sqrt, floor, cos, sin, array
+from numpy import sqrt, floor, cos, sin, array, min
 from collections import deque
 from numpy import ndarray, asarray
 from numpy.typing import ArrayLike
@@ -26,6 +26,11 @@ class RRTNode(ndarray):
 @njit(fastmath=True, cache=True)
 def norm(n):
     return sqrt(n[0]**2 + n[1]**2 + n[2]**2)
+
+
+@njit(fastmath=True, cache=True)
+def norm_squared(n):
+    return n[0]**2 + n[1]**2 + n[2]**2
 
 
 @njit(fastmath=True, cache=True)
@@ -74,6 +79,10 @@ def rotate(n, theta):
     n[1] = -n0 * s + n1 * c
 
     return(n)
+
+@njit(fastmath=True, cache=True)
+def map_index(diff, N_v):
+    return (min(int(floor(400 / 0.6 * norm_squared(diff))), N_v - 1))
 
 
 @njit(fastmath=True, cache=True)

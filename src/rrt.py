@@ -5,7 +5,7 @@ from numpy import floor
 
 from geom_prim import primative_tree, N_v
 from mtree import MTree  # type: ignore
-from rrtutil import RRTNode, rotate, rotate_arc, norm
+from rrtutil import RRTNode, rotate, rotate_arc, map_index
 
 DEBUG = False
 CURVE_RES = 3
@@ -53,8 +53,7 @@ def draw_goal(n, tol):
 
 
 def best_primative(nn, diff):
-    dist = norm(diff)
-    i = min(int(floor(400 / 0.6 * dist**2)), N_v - 1)
+    i = map_index(diff, N_v)
     return (
         primative_tree[i].search(rotate(diff, -nn[2] * 2 * pi))[0].obj
     )
