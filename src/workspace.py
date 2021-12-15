@@ -1,4 +1,5 @@
 from ctypes import CFUNCTYPE
+from threading import Thread
 from time import sleep
 
 import gr
@@ -12,6 +13,7 @@ GREEN = 60
 RED = 30
 BLUE = 77
 
+
 def setup_graphics():
     gr.setviewport(xmin=0, xmax=1, ymin=0, ymax=1)
     gr.setwindow(xmin=-0.1, xmax=1.1, ymin=-0.1, ymax=1.1)
@@ -22,6 +24,9 @@ def setup_graphics():
     gr.setarrowsize(0.5)
 
     gr.updatews()
+
+    thread = Thread(target=updatews, daemon=True)
+    thread.start()
 
 
 def draw_root(n):
@@ -66,7 +71,8 @@ def draw_soln(n):
         gr.polymarker([n[0]], [n[1]])
         n = n.parent
 
-    return(chain_length)
+    return (chain_length)
+
 
 @CFUNCTYPE(None)
 def updatews():
@@ -87,6 +93,7 @@ def updatews():
 
     I chose an update rate of 10 FPS for performance reasons.
     """
+
     while True:
         sleep(0.1)
         gr.updatews()
