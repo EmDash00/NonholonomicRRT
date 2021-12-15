@@ -1,5 +1,5 @@
 from numba import njit  # type: ignore
-from numpy import sqrt, floor, cos, sin, array, min
+from numpy import sqrt, floor, cos, sin, array
 from collections import deque
 from numpy import ndarray, asarray
 from numpy.typing import ArrayLike
