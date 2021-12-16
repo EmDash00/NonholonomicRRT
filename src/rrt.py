@@ -1,14 +1,38 @@
 import gr  # type: ignore
 import numpy as np
 from mtree import MTree  # type: ignore
-from numpy import cos, floor, pi, sin
+from numpy import floor, pi
+from numpy.random import rand
 
 from geom_prim import N_v, primative_tree
-from rrtutil import RRTNode, map_index, rotate, rotate_arc
+from rrtutil import RRTNode, dist, map_index, rotate, rotate_arc
 from workspace import DEBUG
 
 CURVE_RES = 3
 diff = np.empty(3)
+
+
+def sample(goal_p, min_dist, tol):
+    """
+    Use Goal-Region Biased Sampling. This is a form of rejection sampling
+    where we sometimes sample in a region around the goal. The probability
+    of sampling in the goal region vs. the entire workspace is a function
+    of the minimum distance to the goal. Intuitively this is a crude way
+    to implement exploration vs. exploitation.
+    """
+
+    p = tol / (min_dist)
+    r = min_dist + 0.1
+
+    if rand() <= p:
+        x = rand(3)
+
+        while dist(x, goal_p) > r:
+            x = rand(3)
+
+        return (x)
+    else:
+        return (rand(3))
 
 
 def best_primative(nn, diff):
@@ -49,8 +73,7 @@ def connect_node(mtree: MTree, n: RRTNode):
     # n.primative is the primative that encodes the path
 
     # Rotate the geometric primative so that tangents line up
-    path = rotate_arc(best_prim.primative[:, :2].copy(),
-                      nn[2] * pi) + nn[:2]
+    path = rotate_arc(best_prim.primative[:, :2].copy(), nn[2] * pi) + nn[:2]
 
     n[:2] = path[-1]
     n[2] = nn[2] + best_prim.primative[-1, 2]

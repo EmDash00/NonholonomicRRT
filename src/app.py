@@ -5,7 +5,7 @@ from numpy.random import rand
 import rrt
 import workspace
 from geom_prim import RRTNode  # type: ignore
-from rrtutil import dist, dist2, norm_squared  # type: ignore
+from rrtutil import dist  # type: ignore
 
 goal_p = np.array([0.8, 0.8, 0.1])
 
@@ -19,29 +19,6 @@ def goal(n, tol):
     perf = min(perf, d)
 
     return (d < tol)
-
-
-def sample(min_dist, tol):
-    """
-    Use Goal-Region Biased Sampling. This is a form of rejection sampling
-    where we sometimes sample in a region around the goal. The probability
-    of sampling in the goal region vs. the entire workspace is a function
-    of the minimum distance to the goal. Intuitively this is a crude way
-    to implement exploration vs. exploitation.
-    """
-
-    p = tol / (min_dist)
-    r = min_dist + 0.1
-
-    if rand() <= p:
-        x = rand(3)
-
-        while dist(x, goal_p) > r:
-            x = rand(3)
-
-        return(x)
-    else:
-        return (rand(3))
 
 
 def main():
@@ -58,13 +35,17 @@ def main():
         workspace.draw_root(root)
         workspace.draw_goal([0.8, 0.8], tol)
 
-        candidate = rrt.connect_node(mtree, RRTNode(sample(perf, tol)))
+        candidate = rrt.connect_node(mtree, RRTNode(
+            rrt.sample(goal_p, perf, tol))
+        )
 
         while not goal(candidate, tol):
             nodes += 1
             print("Min Dist|Nodes: {:.3f}|{}".format(perf, nodes), end='\r')
 
-            candidate = rrt.connect_node(mtree, RRTNode(sample(perf, tol)))
+            candidate = rrt.connect_node(
+                mtree, RRTNode(rrt.sample(goal_p, perf, tol))
+            )
 
         # Candidate is the goal.
         print("Found solution:", candidate)
