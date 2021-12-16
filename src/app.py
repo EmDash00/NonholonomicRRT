@@ -17,7 +17,7 @@ perf = np.inf
 def goal(n, tol):
     global perf
 
-    d = goal_dist(n, goal_p)
+    d = dist(n, goal_p)
     perf = min(perf, d)
 
     return (d < tol)
@@ -32,13 +32,13 @@ def sample(min_dist, tol):
     to implement exploration vs. exploitation.
     """
 
-    p = tol / (2 * min_dist)
+    p = tol / (min_dist)
     r = min_dist + 0.1
 
     if rand() <= p:
         x = rand(3)
 
-        while goal_dist(x, goal_p) > r:
+        while dist(x, goal_p) > r:
             x = rand(3)
 
         return(x)
@@ -47,7 +47,7 @@ def sample(min_dist, tol):
 
 
 def main():
-    tol = 0.02
+    tol = 0.01
     mtree = MTree(dist, max_node_size=100)
     nodes = 1
 
@@ -70,7 +70,7 @@ def main():
 
         # Candidate is the goal.
         print("Found solution:", candidate)
-        print("Solution distance to goal:", goal_dist(candidate, goal_p))
+        print("Solution distance to goal:", dist(candidate, goal_p))
 
         print("Identified Solution in {} Nodes. Visualizing...".format(nodes))
 

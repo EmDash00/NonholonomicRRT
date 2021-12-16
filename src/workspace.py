@@ -6,6 +6,8 @@ import gr
 import numpy as np
 from numpy import cos, pi, sin
 
+DEBUG = False
+
 NODE_MARKER_SIZE = 0.12
 
 LIGHT_GRAY = 86
@@ -25,8 +27,9 @@ def setup_graphics():
 
     gr.updatews()
 
-    thread = Thread(target=updatews, daemon=True)
-    thread.start()
+    if not DEBUG:
+        thread = Thread(target=updatews, daemon=True)
+        thread.start()
 
 
 def draw_root(n):

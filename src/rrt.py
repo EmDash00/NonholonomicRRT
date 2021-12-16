@@ -1,22 +1,19 @@
 import gr  # type: ignore
 import numpy as np
-from numpy import cos, pi, sin
-from numpy import floor
-
-from geom_prim import primative_tree, N_v
 from mtree import MTree  # type: ignore
-from rrtutil import RRTNode, rotate, rotate_arc, map_index
+from numpy import cos, floor, pi, sin
 
-DEBUG = False
+from geom_prim import N_v, primative_tree
+from rrtutil import RRTNode, map_index, rotate, rotate_arc
+from workspace import DEBUG
+
 CURVE_RES = 3
 diff = np.empty(3)
 
 
 def best_primative(nn, diff):
     i = map_index(diff, N_v)
-    return (
-        primative_tree[i].search(rotate(diff, -nn[2] * 2 * pi))[0].obj
-    )
+    return (primative_tree[i].search(rotate(diff, -nn[2] * pi))[0].obj)
 
 
 def connect_node(mtree: MTree, n: RRTNode):
@@ -52,14 +49,11 @@ def connect_node(mtree: MTree, n: RRTNode):
     # n.primative is the primative that encodes the path
 
     # Rotate the geometric primative so that tangents line up
-    path = rotate_arc(
-        best_prim.primative[:, :2].copy(),
-        nn[2] * 2 * pi
-    ) + nn[:2]
+    path = rotate_arc(best_prim.primative[:, :2].copy(),
+                      nn[2] * pi) + nn[:2]
 
     n[:2] = path[-1]
     n[2] = nn[2] + best_prim.primative[-1, 2]
-    n[2] -= floor(n[2]) # normalize angles to [0, 1] 1.1 -> 1
 
     n.u = best_prim.u
 
@@ -70,9 +64,11 @@ def connect_node(mtree: MTree, n: RRTNode):
 
     mtree.add(n)
 
+    gr.polyline(n.path[:, 0], n.path[:, 1])
+
     if DEBUG:
-        dx = np.cos(n[2] * 2 * pi) / 30
-        dy = np.sin(n[2] * 2 * pi) / 30
+        dx = np.cos(n[2] * pi) / 30
+        dy = np.sin(n[2] * pi) / 30
 
         gr.setlinecolorind(20)
         gr.drawarrow(n[0], n[1], n[0] + dx, n[1] + dy)
@@ -82,7 +78,5 @@ def connect_node(mtree: MTree, n: RRTNode):
 
         input()
         gr.updatews()
-
-    gr.polyline(n.path[::3, 0], n.path[::3, 1])
 
     return (n)
