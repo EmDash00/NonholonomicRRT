@@ -64,7 +64,7 @@ def connect_node(mtree: MTree, n: RRTNode):
 
     mtree.add(n)
 
-    gr.polyline(n.path[:, 0], n.path[:, 1])
+    gr.polyline(n.path[::3, 0], n.path[::3, 1])
 
     if DEBUG:
         dx = np.cos(n[2] * pi) / 30
