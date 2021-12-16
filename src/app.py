@@ -1,4 +1,3 @@
-import gr  # type: ignore
 import numpy as np
 from mtree import MTree  # type: ignore
 from numpy.random import rand
@@ -6,8 +5,7 @@ from numpy.random import rand
 import rrt
 import workspace
 from geom_prim import RRTNode  # type: ignore
-from geom_prim import primative_tree
-from rrtutil import goal_dist, dist, dist2, norm_squared  # type: ignore
+from rrtutil import dist, dist2, norm_squared  # type: ignore
 
 goal_p = np.array([0.8, 0.8, 0.1])
 

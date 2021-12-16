@@ -1,8 +1,7 @@
-from ctypes import CFUNCTYPE
 from threading import Thread
 from time import sleep
 
-import gr
+import gr  # type: ignore
 import numpy as np
 from numpy import cos, pi, sin
 
@@ -82,12 +81,6 @@ def updatews():
     This function is the target of a daemon thread that updates the GR
     workspace. I assume there's some buffer that all the draw events get
     loaded into. This flushes it onto the screen.
-
-    There's a couple caveats about how this should be done. I use the
-    @CFUNCTYPE decorator from ctypes to make this a native C function. This
-    means that it won't hold the GIL.
-
-    https://realpython.com/python-gil/
 
     We also sleep for the majority of this thread when not updating the
     workspace. The use of sleeps allows the OS thread scheduler to run
