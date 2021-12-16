@@ -7,7 +7,7 @@ import workspace
 from geom_prim import RRTNode  # type: ignore
 from rrtutil import dist  # type: ignore
 
-goal_p = np.array([0.8, 0.8, 0.1])
+goal_p = np.array([0.9, 0.9, 0.1])
 
 perf = np.inf
 
@@ -22,18 +22,19 @@ def goal(n, tol):
 
 
 def main():
-    tol = 0.01
+    tol = 0.02
     mtree = MTree(dist, max_node_size=100)
     nodes = 1
 
     try:
-        root = RRTNode(rand(3))
+        root = RRTNode([0.1, 0.1, 0])
         mtree.add(root)
         goal(root, tol)
 
         workspace.setup_graphics()
         workspace.draw_root(root)
-        workspace.draw_goal([0.8, 0.8], tol)
+        workspace.draw_goal(goal_p[:2], tol)
+        workspace.draw_obstacles()
 
         candidate = rrt.connect_node(mtree, RRTNode(
             rrt.sample(goal_p, perf, tol))

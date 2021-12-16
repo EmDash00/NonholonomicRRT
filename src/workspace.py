@@ -1,9 +1,16 @@
+from collections import deque
 from threading import Thread
 from time import sleep
 
 import gr  # type: ignore
 import numpy as np
 from numpy import cos, pi, sin
+from numpy.random import rand
+
+from rrtutil import Rect
+
+N_obst = 30
+obst_side = 0.05
 
 DEBUG = False
 
@@ -14,6 +21,23 @@ GREEN = 60
 RED = 30
 BLUE = 77
 
+obstacles = deque(
+    (
+        Rect(
+            rand(2) * (0.8 - obst_side) + 0.1,
+            bounds=(obst_side, obst_side)
+        )
+    ) for i in range(N_obst)
+)
+
+obstacles.append(
+    Rect([0.0, 0.4], bounds=(0.1, 0.2))
+)
+
+obstacles.append(
+    Rect([0.4, 0.0], bounds=(0.2, 0.1))
+)
+
 
 def setup_graphics():
     gr.setviewport(xmin=0, xmax=1, ymin=0, ymax=1)
@@ -23,6 +47,8 @@ def setup_graphics():
     gr.setmarkercolorind(LIGHT_GRAY)  # Light grey
     gr.setarrowstyle(6)
     gr.setarrowsize(0.5)
+    gr.setfillcolorind(LIGHT_GRAY)
+    gr.setfillintstyle(1)
 
     gr.updatews()
 
@@ -74,6 +100,15 @@ def draw_soln(n):
         n = n.parent
 
     return (chain_length)
+
+
+def draw_obstacles():
+    for obstacle in obstacles:
+
+        gr.fillrect(
+            xmin=obstacle.data[0, 0], xmax=obstacle.data[3, 0],
+            ymin=obstacle.data[0, 1], ymax=obstacle.data[3, 1]
+        )
 
 
 def updatews():
