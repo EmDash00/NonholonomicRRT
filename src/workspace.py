@@ -74,7 +74,6 @@ def draw_soln(n):
     return (chain_length)
 
 
-@CFUNCTYPE(None)
 def updatews():
     """
     This function is the target of a daemon thread that updates the GR

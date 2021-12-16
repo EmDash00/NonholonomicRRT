@@ -7,7 +7,7 @@ import rrt
 import workspace
 from geom_prim import RRTNode  # type: ignore
 from geom_prim import primative_tree
-from rrtutil import goal_dist, dist, dist2, norm2_squared  # type: ignore
+from rrtutil import goal_dist, dist, dist2, norm_squared  # type: ignore
 
 goal_p = np.array([0.8, 0.8, 0.1])
 
@@ -32,16 +32,14 @@ def sample(min_dist, tol):
     to implement exploration vs. exploitation.
     """
 
-    p = tol / min_dist
-    r = min_dist
+    p = tol / (2 * min_dist)
+    r = min_dist + 0.1
 
     if rand() <= p:
         x = rand(3)
 
-        while norm2_squared(x) > r:
+        while goal_dist(x, goal_p) > r:
             x = rand(3)
-
-        x[:2] += goal_p[:2]
 
         return(x)
     else:
@@ -49,7 +47,7 @@ def sample(min_dist, tol):
 
 
 def main():
-    tol = 0.01
+    tol = 0.02
     mtree = MTree(dist, max_node_size=100)
     nodes = 1
 
@@ -72,7 +70,7 @@ def main():
 
         # Candidate is the goal.
         print("Found solution:", candidate)
-        print("Solution distance to goal:", dist(candidate, goal_p))
+        print("Solution distance to goal:", goal_dist(candidate, goal_p))
 
         print("Identified Solution in {} Nodes. Visualizing...".format(nodes))
 
