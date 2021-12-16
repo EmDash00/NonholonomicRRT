@@ -27,9 +27,6 @@ class Rect:
                     p[i] >= self.data[0, i] and p[i] <= self.data[2, i]
                 )
 
-                if not intersecting:
-                    return False
-
             if intersecting:
                 return True
 
