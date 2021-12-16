@@ -5,7 +5,8 @@ from mtree import MTree  # type: ignore
 from os import path
 
 
-L = 0.1
+L = 0.05
+w = 0.025
 v_min = 0.1
 v_max = 5
 T = 0.1  # Amount of time to simulate into the future

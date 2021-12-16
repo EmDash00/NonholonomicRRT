@@ -3,11 +3,11 @@ from mtree import MTree  # type: ignore
 from numpy.random import rand
 
 import rrt
+from rrt import goal_p, start_p
 import workspace
 from geom_prim import RRTNode  # type: ignore
 from rrtutil import dist  # type: ignore
 
-goal_p = np.array([0.9, 0.9, 0.1])
 
 perf = np.inf
 
@@ -27,7 +27,7 @@ def main():
     nodes = 1
 
     try:
-        root = RRTNode([0.1, 0.1, 0])
+        root = RRTNode(start_p)
         mtree.add(root)
         goal(root, tol)
 

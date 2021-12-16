@@ -5,11 +5,17 @@ from numpy import floor, pi
 from numpy.random import rand
 
 from geom_prim import N_v, primative_tree
-from rrtutil import RRTNode, dist, map_index, rotate, rotate_arc
+from rrtutil import Rect, RRTNode, dist, map_index, rotate, rotate_arc
 from workspace import DEBUG
+
+
+goal_p = np.array([0.9, 0.9, 0.1])
+start_p = np.array([0.1, 0.1, 0])
 
 CURVE_RES = 3
 diff = np.empty(3)
+
+vehicle = Rect(start_p, (geom_prim.L, geom_prim.w))
 
 
 def sample(goal_p, min_dist, tol):
@@ -33,6 +39,10 @@ def sample(goal_p, min_dist, tol):
         return (x)
     else:
         return (rand(3))
+
+
+def check_collision(path):
+    pass
 
 
 def best_primative(nn, diff):
