@@ -1,21 +1,25 @@
-import gr  # type: ignore
+from collections import deque
+from time import perf_counter
+
+import gr
 import numpy as np
-from numpy.random import rand
-from silkworm.silktime import IntervalTimer  # type: ignore
+from mtree import MTree  # type: ignore
 
 import rrt
-from mtree import MTree  # type: ignore
+import workspace
 from geom_prim import RRTNode  # type: ignore
-from geom_prim import primative_tree
-from rrtutil import dist, dist2  # type: ignore
-
-goal_p = np.array([0.8, 0.8, 0.1])
+from workspace import goal_p, start_p, tol
+from rrtutil import dist  # type: ignore
+from workspace import LIVE
 
 perf = np.inf
 
 
 def goal(n, tol):
     global perf
+
+    if n is None:
+        return False
 
     d = dist(n, goal_p)
     perf = min(perf, d)
@@ -24,48 +28,53 @@ def goal(n, tol):
 
 
 def main():
-    tol = 0.04
     mtree = MTree(dist, max_node_size=100)
     nodes = 1
-    t = IntervalTimer(1 / 10, start=True)
 
     try:
-        root = RRTNode(rand(3))
+        gr.beginprint("soln.mp4")
+        root = RRTNode(start_p)
         mtree.add(root)
+        goal(root, tol)
 
-        rrt.setup_graphics()
-        rrt.draw_root(root)
-        rrt.draw_goal([0.8, 0.8], tol)
+        workspace.setup_graphics()
+        workspace.draw_root()
+        workspace.draw_goal()
+        workspace.draw_obstacles()
 
-        candidate = rrt.connect_node(mtree, RRTNode(rand(3)))
+        candidate = rrt.connect_node(mtree,
+                                     RRTNode(rrt.sample(goal_p, perf, tol)))
+
+        t0 = perf_counter()
 
         while not goal(candidate, tol):
-            nodes += 1
             print("Min Dist|Nodes: {:.3f}|{}".format(perf, nodes), end='\r')
 
-            candidate = rrt.connect_node(mtree, RRTNode(rand(3)))
+            candidate = rrt.connect_node(
+                mtree, RRTNode(rrt.sample(goal_p, perf, tol)))
 
-            if t.tick():
+            if candidate is not None:
+                nodes += 1
+
+            if perf_counter() - t0 > 0.1:
                 gr.updatews()
+                t0 = perf_counter()
 
         # Candidate is the goal.
-        print(candidate)
-        print(dist(candidate, goal_p))
+        print("Found solution:", candidate)
+        print("Solution distance to goal:", dist(candidate, goal_p))
 
         print("Identified Solution in {} Nodes. Visualizing...".format(nodes))
-        gr.setlinecolorind(77)
 
-        chain_length = 1
-        while candidate.parent is not None:
-            chain_length += 1
-            gr.polyline([candidate[0], candidate.parent[0]],
-                        [candidate[1], candidate.parent[1]])
+        soln = [x for x in candidate.backtrack()][::-1]
 
-            gr.polymarker([candidate[0]], [candidate[1]])
-            candidate = candidate.parent
-            gr.updatews()
+        workspace.draw_soln(soln)
+        gr.updatews()
+        input()
+        workspace.animate_soln(soln)
+        gr.endprint()
 
-        print("Solution visualized. Chain length:", chain_length)
+        print("Solution visualized. Chain length:", len(soln))
         input()
 
     except KeyboardInterrupt:

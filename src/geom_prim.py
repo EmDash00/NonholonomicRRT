@@ -1,91 +1,86 @@
 import numpy as np
-from numpy import cos, sin, pi, ndarray, asarray
-from numpy.typing import ArrayLike
-from collections import deque
-from rrtutil import dist, dist2
+from numpy import cos, sin, pi, floor
+from rrtutil import RRTNode, dist, dist2
 from mtree import MTree  # type: ignore
 from os import path
 
 
-class RRTNode(ndarray):
-    def __new__(cls, arr: ArrayLike):
-        n = asarray(arr).view(cls)
-        return (n)
-
-    # This is how you add properties to ndarray subclasses evidently.
-    def __array_finalize__(self, obj):
-        if obj is not None:
-            # [phi, v, (start_t_idx, stop_t_idx), phi_idx]
-            self.u = getattr(obj, 'u', [None] * 4)
-            self.parent = getattr(obj, 'parent', None)
-
-            # Deques have O(1) insertion at the end, no reallactions necessary!
-            self.children = getattr(obj, 'children', deque())
-
-
-L = 0.1
-v = 0.5
+L = 0.05
+w = 0.025
+v_min = 0.1
+v_max = 5
 T = 0.1  # Amount of time to simulate into the future
 
 N_phi = 21  # Number of turning angles to generate
-N_t = 100  # Resolution of Euler integration
+N_t = 10  # Resolution of Euler integration
+N_v = 300  # Number of velocities to integrate over
 dt = T / N_t
 phi = np.linspace(-0.4 * np.pi, 0.4 * np.pi, N_phi)
+v = np.linspace(v_min, v_max, N_v)
 
 
 def generate_primatives():
-    primatives = np.zeros((N_t, N_phi, 3))
+    primatives = np.zeros((N_t * 2, N_v, N_phi, 3))
+    pos_prim = primatives[:N_t]
+    neg_prim = primatives[N_t:]
 
-    for i in range(1, N_t):
-        primatives[i, :, 0] = (
-            primatives[i - 1, :, 0] +
-            v * cos(phi) * cos(primatives[i - 1, :, 2] * 2 * pi) * dt
-        )
 
-        primatives[i, :, 1] = (
-            primatives[i - 1, :, 1] +
-            v * cos(phi) * sin(primatives[i - 1, :, 2] * 2 * pi) * dt
-        )
+    for i in range(N_v):
+        for j in range(1, N_t):
+            pos_prim[j, i, :, 0] = (
+                pos_prim[j - 1, i, :, 0] +
+                v[i] *
+                np.cos(phi) * np.cos(pos_prim[j - 1, i, :, 2] * pi) * dt
+            )
 
-        primatives[i, :, 2] = (
-            primatives[i - 1, :, 2] +
-            v / L * sin(phi) / (2 * pi) * dt
-        )
+            pos_prim[j, i, :, 1] = (
+                pos_prim[j - 1, i, :, 1] +
+                v[i] *
+                np.cos(phi) * np.sin(pos_prim[j - 1, i, :, 2] * pi) * dt
+            )
+
+            pos_prim[j, i, :, 2] = (
+                pos_prim[j - 1, i, :, 2] +
+                v[i] / L * np.sin(phi) / (pi) * dt
+            )
+
 
     # Negative v is just a sign change.
-    # Don't account for
-    np.save("primatives.npy", np.concatenate((primatives, -primatives)))
-    # np.save("primatives.npy", primatives)
+    neg_prim[..., :2] = -pos_prim[..., :2]
+
+    # Caveat, primatives moving in the opposite direction have
+    # Orientation rotated by pi (1 half-revs)
+    neg_prim[..., 2] = pos_prim[..., 2] + 1
+
+    np.save("primatives.npy", primatives)
 
 
 if __name__ == "__main__":
     generate_primatives()
-
 if not path.exists("./primatives.npy"):
     generate_primatives()
 
 # (timestep, phi, x/y/theta)
 prims = np.load("primatives.npy")
-primative_tree = MTree(dist)
+prims_pos = prims[:N_t]
+prims_neg = prims[N_t:]
 
-for t in range(N_t):
-    for i, row in enumerate(prims[t]):
-        n = RRTNode(row)
-        n.u[0] = phi[i] / (2 * np.pi)
-        n.u[1] = v
+primative_tree = [MTree(dist) for i in range(N_v)]
 
-        n.u[2] = (0, t)
-        n.u[3] = i
+for i in range(N_v):
+    for j in range(N_phi):
+        n = RRTNode(prims_pos[-1, i, j])
+        n.u[0] = phi[j]
+        n.u[1] = v[i]
 
-        primative_tree.add(n)
+        n.primative = prims_pos[:, i, j]
 
-for t in range(N_t, 2 * N_t):
-    for i, row in enumerate(prims[t]):
-        n = RRTNode(row)
-        n.u[0] = phi[i] / (2 * np.pi)
-        n.u[1] = -v
+        primative_tree[i].add(n)
 
-        n.u[2] = (N_t, t)
-        n.u[3] = i
+        n_neg = RRTNode(prims_neg[-1, i, j])
+        n_neg.u[0] = phi[j]
+        n_neg.u[1] = -v[i]
 
-        primative_tree.add(n)
+        n_neg.primative = prims_neg[:, i, j]
+
+        primative_tree[i].add(n_neg)

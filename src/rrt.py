@@ -1,58 +1,66 @@
 import gr  # type: ignore
 import numpy as np
-from numpy import cos, pi, sin
-from numpy import floor
-
-from geom_prim import primative_tree, RRTNode, prims
 from mtree import MTree  # type: ignore
-from rrtutil import rotate, rotate_arc
+from numpy import empty, floor, pi
+from numpy.random import rand
 
+import workspace
+from geom_prim import L, N_v, primative_tree, w
+from rrtutil import (
+    Rect, RRTNode, dist, map_index, rotate, rotate_arc, linear_interp
+)
+from workspace import DEBUG, DEBUG_COLL, base_conf, inter_conf
+
+CURVE_RES = 3
 diff = np.empty(3)
 
 
-def setup_graphics():
-    gr.setviewport(xmin=0, xmax=1, ymin=0, ymax=1)
-    gr.setwindow(xmin=0, xmax=1, ymin=0, ymax=1)
+def sample(goal_p, min_dist, tol):
+    """
+    Use Goal-Region Biased Sampling. This is a form of rejection sampling
+    where we sometimes sample in a region around the goal. The probability
+    of sampling in the goal region vs. the entire workspace is a function
+    of the minimum distance to the goal. Intuitively this is a crude way
+    to implement exploration vs. exploitation.
+    """
 
-    gr.setmarkertype(gr.MARKERTYPE_SOLID_CIRCLE)
-    gr.setmarkercolorind(86)  # Light grey
+    p = tol / (min_dist)
+    r = min_dist + 0.1
 
-    gr.updatews()
+    if rand() <= p:
+        x = rand(3)
 
+        while dist(x, goal_p) > r:
+            x = rand(3)
 
-def draw_root(n):
-    gr.setmarkersize(1)
-    gr.setmarkercolorind(60)
-    gr.polymarker([n[0]], [n[1]])
-    gr.setmarkercolorind(86)  # Light grey
-
-    gr.setmarkersize(0.12)
-    gr.updatews()
+        return (x)
+    else:
+        return (rand(3))
 
 
-def draw_goal(n, tol):
-    gr.setmarkersize(1)
-    gr.setmarkercolorind(30)
-    gr.polymarker([n[0]], [n[1]])
+def valid_path(path):
+    for i in range(len(path) - 1):
+        for p in linear_interp(path[i], path[i + 1], 5):
+            rotate_arc(base_conf.data, p[2] * pi, out=inter_conf.data)
+            inter_conf.data += p[:2]
 
-    x = tol * cos(2 * pi * np.linspace(0, 1, num=1000)) + n[0]
-    y = tol * sin(2 * pi * np.linspace(0, 1, num=1000)) + n[1]
+            if DEBUG:
+                gr.setlinecolorind(workspace.RED)
+                inter_conf.draw()
 
-    gr.setlinetype(gr.LINETYPE_DOTTED)
-    gr.polyline(x, y)
+            if workspace.is_cobst(inter_conf.data):
+                return False
 
-    gr.setlinetype(gr.LINETYPE_SOLID)
-    gr.setmarkercolorind(86)  # Light grey
+    if DEBUG:
+        input()
+        gr.setlinecolorind(1296)
 
-    gr.setmarkersize(0.12)
-
-    gr.updatews()
+    return True
 
 
 def best_primative(nn, diff):
-    return (
-        primative_tree.search(rotate(diff, -nn[2] * 2 * pi))[0].obj
-    )
+    i = map_index(diff, N_v)
+    return (primative_tree[i].search(rotate(diff, -nn[2] * pi), 10))
 
 
 def connect_node(mtree: MTree, n: RRTNode):
@@ -67,6 +75,8 @@ def connect_node(mtree: MTree, n: RRTNode):
     # Calculate the displacement
 
     diff = n - nn
+
+    # Angular difference in revolutions.
     diff[2] += 0.5
     diff[2] -= (floor(diff[2]) + 0.5)
 
@@ -80,24 +90,48 @@ def connect_node(mtree: MTree, n: RRTNode):
     # Find the best geometric primative given the diff rotated -theta
     # Rotate the primative back and add it.
 
-    best = rotate(best_primative(nn, diff), nn[2] * 2 * pi)
+    results = best_primative(nn, diff)
 
-    n[:] = nn + best
-    n.u = best.u
+    for res in map(lambda x: x.obj, results):
 
-    n.parent = nn
-    n.parent.children.append(n)
+        if res is None:
+            break
 
-    mtree.add(n)
+        # Rotate the geometric primative so that tangents line up
+        # n.primative is the primative that encodes the path
+        path = rotate_arc(res.primative.copy(), nn[2] * pi) + nn
 
-    gr.polymarker([n[0]], [n[1]])
-    curve = rotate_arc(
-        prims[n.u[2][0]:n.u[2][1], n.u[3]][:, :2],
-        -nn[2] * 2 * pi
-    )
+        # Check if the path generate is a valid one
+        if valid_path(path):
+            n[:] = path[-1]
 
-    gr.polyline(curve[:, 0] + nn[0], curve[:, 1] + nn[1])
-    gr.updatews()
-    input()
+            # n.u are the inputs necessary to reach the node
+            # u[0] and u[1] are the angle and velocity respectively
+            n.u = res.u
 
-    return (n)
+            # n.path is the path necessary to get from n.parent to n
+            n.path = path
+
+            n.parent = nn
+            n.parent.children.append(n)
+
+            mtree.add(n)
+
+            gr.polyline(n.path[:, 0], n.path[:, 1])
+
+            if DEBUG:
+                dx = np.cos(n[2] * pi) / 30
+                dy = np.sin(n[2] * pi) / 30
+
+                gr.setlinecolorind(20)
+                gr.drawarrow(n[0], n[1], n[0] + dx, n[1] + dy)
+                gr.setlinecolorind(1296)
+
+                gr.polymarker([n[0]], [n[1]])
+
+                input()
+                gr.updatews()
+
+            return (n)
+
+    return (None)
