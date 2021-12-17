@@ -1,12 +1,16 @@
+from collections import deque
+from time import perf_counter
+
+import gr
 import numpy as np
 from mtree import MTree  # type: ignore
 
 import rrt
-from rrt import goal_p, start_p
 import workspace
 from geom_prim import RRTNode  # type: ignore
+from workspace import goal_p, start_p, tol
 from rrtutil import dist  # type: ignore
-
+from workspace import LIVE
 
 perf = np.inf
 
@@ -24,33 +28,37 @@ def goal(n, tol):
 
 
 def main():
-    tol = 0.02
     mtree = MTree(dist, max_node_size=100)
     nodes = 1
 
     try:
+        gr.beginprint("soln.mp4")
         root = RRTNode(start_p)
         mtree.add(root)
         goal(root, tol)
 
         workspace.setup_graphics()
-        workspace.draw_root(root)
-        workspace.draw_goal(goal_p[:2], tol)
+        workspace.draw_root()
+        workspace.draw_goal()
         workspace.draw_obstacles()
 
-        candidate = rrt.connect_node(mtree, RRTNode(
-            rrt.sample(goal_p, perf, tol))
-        )
+        candidate = rrt.connect_node(mtree,
+                                     RRTNode(rrt.sample(goal_p, perf, tol)))
+
+        t0 = perf_counter()
 
         while not goal(candidate, tol):
             print("Min Dist|Nodes: {:.3f}|{}".format(perf, nodes), end='\r')
 
             candidate = rrt.connect_node(
-                mtree, RRTNode(rrt.sample(goal_p, perf, tol))
-            )
+                mtree, RRTNode(rrt.sample(goal_p, perf, tol)))
 
             if candidate is not None:
                 nodes += 1
+
+            if perf_counter() - t0 > 0.1:
+                gr.updatews()
+                t0 = perf_counter()
 
         # Candidate is the goal.
         print("Found solution:", candidate)
@@ -58,9 +66,15 @@ def main():
 
         print("Identified Solution in {} Nodes. Visualizing...".format(nodes))
 
-        chain_length = workspace.draw_soln(candidate)
+        soln = [x for x in candidate.backtrack()][::-1]
 
-        print("Solution visualized. Chain length:", chain_length)
+        workspace.draw_soln(soln)
+        gr.updatews()
+        input()
+        workspace.animate_soln(soln)
+        gr.endprint()
+
+        print("Solution visualized. Chain length:", len(soln))
         input()
 
     except KeyboardInterrupt:

@@ -1,4 +1,5 @@
 from collections import deque
+from itertools import islice
 from threading import Thread
 from time import sleep
 
@@ -6,8 +7,10 @@ import gr  # type: ignore
 import numpy as np
 from numpy import cos, pi, sin
 from numpy.random import rand
+from time import perf_counter
 
-from rrtutil import Rect
+from geom_prim import L, w
+from rrtutil import Rect, rotate_arc, linear_interp
 
 N_obst = 30
 obst_side = 0.05
@@ -21,24 +24,22 @@ LIGHT_GRAY = 86
 GREEN = 60
 RED = 30
 BLUE = 77
+LIVE = True
 
 obstacles = deque(
-    (
-        Rect(
-            rand(2) * (0.8 - obst_side) + 0.1,
-            bounds=(obst_side, obst_side)
-        )
-    ) for i in range(N_obst)
-)
+    (Rect(rand(2) * (0.8 - obst_side) + 0.1, bounds=(obst_side, obst_side)))
+    for i in range(N_obst))
 
-obstacles.append(
-    Rect([0.0, 0.4], bounds=(0.1, 0.2))
-)
+obstacles.append(Rect([0.0, 0.4], bounds=(0.1, 0.2)))
+obstacles.append(Rect([0.4, 0.0], bounds=(0.2, 0.1)))
 
-obstacles.append(
-    Rect([0.4, 0.0], bounds=(0.2, 0.1))
-)
+base_conf = Rect((0, 0), (L, w))
+inter_conf = Rect((0, 0), (L, w))  # intermediate configuration
 
+goal_p = np.array([0.9, 0.9, 0.5])
+start_p = np.array([0.1, 0.1, 0])
+
+tol = 0.02
 
 def is_cobst(conf):
     """
@@ -65,28 +66,23 @@ def setup_graphics():
 
     gr.updatews()
 
-    if not DEBUG:
-        thread = Thread(target=updatews, daemon=True)
-        thread.start()
 
-
-def draw_root(n):
+def draw_root():
     gr.setmarkersize(1)
     gr.setmarkercolorind(GREEN)
-    gr.polymarker([n[0]], [n[1]])
+    gr.polymarker([start_p[0]], [start_p[1]])
     gr.setmarkercolorind(LIGHT_GRAY)
 
     gr.setmarkersize(NODE_MARKER_SIZE)
-    gr.updatews()
 
 
-def draw_goal(n, tol):
+def draw_goal():
     gr.setmarkersize(1)
     gr.setmarkercolorind(RED)
-    gr.polymarker([n[0]], [n[1]])
+    gr.polymarker([goal_p[0]], [goal_p[1]])
 
-    x = tol * cos(2 * pi * np.linspace(0, 1, num=1000)) + n[0]
-    y = tol * sin(2 * pi * np.linspace(0, 1, num=1000)) + n[1]
+    x = tol * cos(2 * pi * np.linspace(0, 1, num=1000)) + goal_p[0]
+    y = tol * sin(2 * pi * np.linspace(0, 1, num=1000)) + goal_p[1]
 
     gr.setlinetype(gr.LINETYPE_DOTTED)
     gr.polyline(x, y)
@@ -96,23 +92,39 @@ def draw_goal(n, tol):
 
     gr.setmarkersize(NODE_MARKER_SIZE)
 
-    gr.updatews()
 
-
-def draw_soln(n):
+def draw_soln(soln):
 
     gr.setlinecolorind(BLUE)
 
-    chain_length = 0
-
-    while n.parent is not None:
-        chain_length += 1
+    for n in soln[1:]:
         gr.polyline(n.path[:, 0], n.path[:, 1])
-
         gr.polymarker([n[0]], [n[1]])
-        n = n.parent
 
-    return (chain_length)
+
+def animate_soln(soln):
+    for n in soln[1:]:
+        for i in range(len(n.path) - 1):
+            for p in linear_interp(n.path[i], n.path[i + 1], 20):
+                gr.clearws()
+                gr.setfillcolorind(LIGHT_GRAY)
+                draw_root()
+                draw_goal()
+                draw_obstacles()
+                gr.setfillcolorind(GREEN)
+
+                rotate_arc(base_conf.data, p[2] * pi, out=inter_conf.data)
+
+                inter_conf.data += p[:2]
+                inter_conf.draw()
+
+                draw_soln(soln)
+
+                t0 = perf_counter()
+
+                gr.updatews()
+                while perf_counter() - t0 < (1 / 120):
+                    pass
 
 
 def draw_obstacles():
@@ -133,6 +145,6 @@ def updatews():
     I chose an update rate of 10 FPS for performance reasons.
     """
 
-    while True:
+    while LIVE:
         sleep(0.1)
         gr.updatews()

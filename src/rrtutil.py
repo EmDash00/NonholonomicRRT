@@ -17,13 +17,7 @@ class Rect:
             dtype=float)
 
     def draw(self):
-        gr.fillrect(
-            xmin=self.data[0, 0], xmax=self.data[2, 0],
-            ymin=self.data[0, 1], ymax=self.data[2, 1]
-        )
-
-    def draw_outline(self):
-        gr.polyline(
+        gr.fillarea(
             [
                 self.data[0, 0],
                 self.data[1, 0],
@@ -74,6 +68,13 @@ class RRTNode(ndarray):
 
             # Deques have O(1) insertion at the end, no reallactions necessary!
             self.children = getattr(obj, 'children', deque())
+
+    # Generate nodes headed up the treet until you hit the root.
+    def backtrack(self):
+        node = self
+        while node is not None:
+            yield node
+            node = node.parent
 
 
 def linear_interp(p0, p1, N=10):

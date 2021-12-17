@@ -6,11 +6,10 @@ from numpy.random import rand
 
 import workspace
 from geom_prim import L, N_v, primative_tree, w
-from rrtutil import Rect, RRTNode, dist, map_index, rotate, rotate_arc
+from rrtutil import (
+    Rect, RRTNode, dist, map_index, rotate, rotate_arc, linear_interp
+)
 from workspace import DEBUG, DEBUG_COLL, base_conf, inter_conf
-
-goal_p = np.array([0.9, 0.9, 0.1])
-start_p = np.array([0.1, 0.1, 0])
 
 CURVE_RES = 3
 diff = np.empty(3)
@@ -40,16 +39,17 @@ def sample(goal_p, min_dist, tol):
 
 
 def valid_path(path):
-    for p in path:
-        rotate_arc(base_conf.data, p[2] * pi, out=inter_conf.data)
-        inter_conf.data += p[:2]
+    for i in range(len(path) - 1):
+        for p in linear_interp(path[i], path[i + 1], 5):
+            rotate_arc(base_conf.data, p[2] * pi, out=inter_conf.data)
+            inter_conf.data += p[:2]
 
-        if DEBUG:
-            gr.setlinecolorind(workspace.RED)
-            inter_conf.draw()
+            if DEBUG:
+                gr.setlinecolorind(workspace.RED)
+                inter_conf.draw()
 
-        if workspace.is_cobst(inter_conf.data):
-            return False
+            if workspace.is_cobst(inter_conf.data):
+                return False
 
     if DEBUG:
         input()
@@ -99,9 +99,7 @@ def connect_node(mtree: MTree, n: RRTNode):
 
         # Rotate the geometric primative so that tangents line up
         # n.primative is the primative that encodes the path
-        path = rotate_arc(
-            res.primative.copy(), nn[2] * pi
-        ) + nn
+        path = rotate_arc(res.primative.copy(), nn[2] * pi) + nn
 
         # Check if the path generate is a valid one
         if valid_path(path):
@@ -136,4 +134,4 @@ def connect_node(mtree: MTree, n: RRTNode):
 
             return (n)
 
-    return(None)
+    return (None)
