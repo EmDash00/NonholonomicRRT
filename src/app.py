@@ -43,12 +43,14 @@ def main():
         )
 
         while not goal(candidate, tol):
-            nodes += 1
             print("Min Dist|Nodes: {:.3f}|{}".format(perf, nodes), end='\r')
 
             candidate = rrt.connect_node(
                 mtree, RRTNode(rrt.sample(goal_p, perf, tol))
             )
+
+            if candidate is not None:
+                nodes += 1
 
         # Candidate is the goal.
         print("Found solution:", candidate)

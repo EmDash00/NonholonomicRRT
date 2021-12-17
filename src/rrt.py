@@ -47,9 +47,8 @@ def valid_path(path, thetas, theta0):
         rotate_arc(base_conf.data, (theta + theta0) * pi, out=inter_conf.data)
         inter_conf.data += p[:2]
 
-        for corner in inter_conf.data:
-            if workspace.is_cobst(corner):
-                return True
+        if workspace.is_cobst(inter_conf.data):
+            return True
 
     return False
 
@@ -89,6 +88,10 @@ def connect_node(mtree: MTree, n: RRTNode):
     results = best_primative(nn, diff)
 
     for res in map(lambda x: x.obj, results):
+
+        if res is None:
+            break
+
         # Rotate the geometric primative so that tangents line up
         # n.primative is the primative that encodes the path
         path = rotate_arc(
