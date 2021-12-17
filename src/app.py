@@ -1,6 +1,5 @@
 import numpy as np
 from mtree import MTree  # type: ignore
-from numpy.random import rand
 
 import rrt
 from rrt import goal_p, start_p
@@ -14,6 +13,9 @@ perf = np.inf
 
 def goal(n, tol):
     global perf
+
+    if n is None:
+        return False
 
     d = dist(n, goal_p)
     perf = min(perf, d)

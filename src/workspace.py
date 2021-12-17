@@ -39,6 +39,18 @@ obstacles.append(
 )
 
 
+def is_cobst(p):
+    """
+    Check if a point is in C_obst.
+    """
+
+    for obst in obstacles:
+        if obst.intersects(p):
+            return True
+
+    return False
+
+
 def setup_graphics():
     gr.setviewport(xmin=0, xmax=1, ymin=0, ymax=1)
     gr.setwindow(xmin=-0.1, xmax=1.1, ymin=-0.1, ymax=1.1)

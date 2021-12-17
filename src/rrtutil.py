@@ -139,11 +139,13 @@ def map_index(diff, N_v):
 
 
 @njit(fastmath=True, cache=True)
-def rotate_arc(n, theta):
+def rotate_arc(n, theta, out=None):
+    if out is None:
+        out = n
 
     R = array([[cos(theta), -sin(theta)], [sin(theta), cos(theta)]])
 
     for i in range(n.shape[0]):
-        n[i][:] = R @ n[i]
+        out[:, :2][i][:] = R @ n[:, :2][i]
 
-    return (n)
+    return (out)
