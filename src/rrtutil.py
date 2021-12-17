@@ -1,8 +1,55 @@
-from numba import njit  # type: ignore
-from numpy import sqrt, floor, cos, sin, array
 from collections import deque
-from numpy import ndarray, asarray
+
+import gr
+from numba import njit  # type: ignore
+from numpy import array, asarray, cos, floor, ndarray, sin, sqrt
 from numpy.typing import ArrayLike
+
+
+class Rect:
+    def __init__(self, center, bounds):
+        a = bounds[0] / 2
+        b = bounds[1] / 2
+
+        self.data = array(
+            [[center[0] - a, center[1] - b], [center[0] - a, center[1] + b],
+             [center[0] + a, center[1] + b], [center[0] + a, center[1] - b]],
+            dtype=float)
+
+    def draw(self):
+        gr.fillarea(
+            [
+                self.data[0, 0],
+                self.data[1, 0],
+                self.data[2, 0],
+                self.data[3, 0],
+                self.data[0, 0]
+            ],
+            [
+                self.data[0, 1],
+                self.data[1, 1],
+                self.data[2, 1],
+                self.data[3, 1],
+                self.data[0, 1]
+            ]
+        )
+
+    def intersects(self, r2):
+        """
+        Determines whether a point is within the rectangle.
+        """
+        for p in r2:
+            intersecting = True
+
+            for i in range(self.data.shape[1]):
+                intersecting = intersecting and (
+                    p[i] >= self.data[0, i] and p[i] <= self.data[2, i]
+                )
+
+            if intersecting:
+                return True
+
+        return False
 
 
 class RRTNode(ndarray):
@@ -21,6 +68,21 @@ class RRTNode(ndarray):
 
             # Deques have O(1) insertion at the end, no reallactions necessary!
             self.children = getattr(obj, 'children', deque())
+
+    # Generate nodes headed up the treet until you hit the root.
+    def backtrack(self):
+        node = self
+        while node is not None:
+            yield node
+            node = node.parent
+
+
+def linear_interp(p0, p1, N=10):
+    """
+    Calculates a linear interpolation between p0 and p1
+    """
+    for i in range(N + 1):
+        yield p0 * (1 - i / N) + p1 * i / N
 
 
 @njit(fastmath=True, cache=True)
@@ -56,6 +118,17 @@ def dist(n1, n2):
 
 
 @njit(fastmath=True, cache=True)
+def goal_dist(n1, n2):
+    theta = n1[2] * 2
+    theta -= floor(theta)
+
+    angdiff = theta - n2[2] + 0.5
+    angdiff -= (floor(angdiff) + 0.5)
+
+    return sqrt((n1[0] - n2[0])**2 + (n1[1] - n2[1])**2 + (angdiff**2))
+
+
+@njit(fastmath=True, cache=True)
 def dist2(n1, n2):
     return sqrt((n1[0] - n2[0])**2 + (n1[1] - n2[1])**2)
 
@@ -83,7 +156,8 @@ def rotate(n, theta):
     n[0] = n0 * c + n1 * s
     n[1] = -n0 * s + n1 * c
 
-    return(n)
+    return (n)
+
 
 @njit(fastmath=True, cache=True)
 def map_index(diff, N_v):
@@ -91,14 +165,13 @@ def map_index(diff, N_v):
 
 
 @njit(fastmath=True, cache=True)
-def rotate_arc(n, theta):
+def rotate_arc(n, theta, out=None):
+    if out is None:
+        out = n
 
-    R = array([
-        [cos(theta), -sin(theta)],
-        [sin(theta), cos(theta)]
-    ])
+    R = array([[cos(theta), -sin(theta)], [sin(theta), cos(theta)]])
 
     for i in range(n.shape[0]):
-        n[i][:] = R @ n[i]
+        out[:, :2][i][:] = R @ n[:, :2][i]
 
-    return(n)
+    return (out)

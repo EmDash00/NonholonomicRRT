@@ -5,7 +5,8 @@ from mtree import MTree  # type: ignore
 from os import path
 
 
-L = 0.1
+L = 0.05
+w = 0.025
 v_min = 0.1
 v_max = 5
 T = 0.1  # Amount of time to simulate into the future
@@ -29,29 +30,28 @@ def generate_primatives():
             pos_prim[j, i, :, 0] = (
                 pos_prim[j - 1, i, :, 0] +
                 v[i] *
-                np.cos(phi) * np.cos(pos_prim[j - 1, i, :, 2] * 2 * pi) * dt
+                np.cos(phi) * np.cos(pos_prim[j - 1, i, :, 2] * pi) * dt
             )
 
             pos_prim[j, i, :, 1] = (
                 pos_prim[j - 1, i, :, 1] +
                 v[i] *
-                np.cos(phi) * np.sin(pos_prim[j - 1, i, :, 2] * 2 * pi) * dt
+                np.cos(phi) * np.sin(pos_prim[j - 1, i, :, 2] * pi) * dt
             )
 
             pos_prim[j, i, :, 2] = (
                 pos_prim[j - 1, i, :, 2] +
-                v[i] / L * np.sin(phi) / (2 * pi) * dt
+                v[i] / L * np.sin(phi) / (pi) * dt
             )
 
-    pos_prim[..., 2] -= floor(pos_prim[..., 2])
-
-    # Caveat, primatives moving in the opposite direction have
-    # Orientation rotated by pi/2 (0.5 revs)
-    neg_prim[..., :2] = -pos_prim[..., :2]
-    neg_prim[..., 2] = pos_prim[..., 2] + 0.5
-    neg_prim[..., 2] -= floor(neg_prim[..., 2])
 
     # Negative v is just a sign change.
+    neg_prim[..., :2] = -pos_prim[..., :2]
+
+    # Caveat, primatives moving in the opposite direction have
+    # Orientation rotated by pi (1 half-revs)
+    neg_prim[..., 2] = pos_prim[..., 2] + 1
+
     np.save("primatives.npy", primatives)
 
 
