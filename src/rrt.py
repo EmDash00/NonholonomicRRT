@@ -7,7 +7,7 @@ from numpy.random import rand
 import workspace
 from geom_prim import L, N_v, primative_tree, w
 from rrtutil import Rect, RRTNode, dist, map_index, rotate, rotate_arc
-from workspace import DEBUG
+from workspace import DEBUG, DEBUG_COLL
 
 goal_p = np.array([0.9, 0.9, 0.1])
 start_p = np.array([0.1, 0.1, 0])
@@ -44,11 +44,20 @@ def sample(goal_p, min_dist, tol):
 
 def valid_path(path, thetas, theta0):
     for theta, p in zip(thetas, path):
-        rotate_arc(base_conf.data, (theta + theta0) * pi, out=inter_conf.data)
+        alpha = (theta + theta0)
+        rotate_arc(base_conf.data, alpha * pi, out=inter_conf.data)
         inter_conf.data += p[:2]
+
+        if DEBUG:
+            gr.setlinecolorind(workspace.RED)
+            inter_conf.draw_outline()
 
         if workspace.is_cobst(inter_conf.data):
             return False
+
+    if DEBUG:
+        input()
+        gr.setlinecolorind(1296)
 
     return True
 
@@ -99,7 +108,7 @@ def connect_node(mtree: MTree, n: RRTNode):
         ) + nn[:2]
 
         # Check if the path generate is a valid one
-        if valid_path(path, res.primative[2], nn[2]):
+        if valid_path(path, res.primative[:, 2], nn[2]):
             n[:2] = path[-1]
             n[2] = nn[2] + res.primative[-1, 2]
 
@@ -115,7 +124,7 @@ def connect_node(mtree: MTree, n: RRTNode):
 
             mtree.add(n)
 
-            gr.polyline(n.path[::3, 0], n.path[::3, 1])
+            gr.polyline(n.path[:, 0], n.path[:, 1])
 
             if DEBUG:
                 dx = np.cos(n[2] * pi) / 30

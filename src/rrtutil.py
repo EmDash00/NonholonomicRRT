@@ -1,5 +1,6 @@
 from collections import deque
 
+import gr
 from numba import njit  # type: ignore
 from numpy import array, asarray, cos, floor, ndarray, sin, sqrt
 from numpy.typing import ArrayLike
@@ -12,8 +13,32 @@ class Rect:
 
         self.data = array(
             [[center[0] - a, center[1] - b], [center[0] - a, center[1] + b],
-             [center[0] + a, center[1] - b], [center[0] + a, center[1] + b]],
+             [center[0] + a, center[1] + b], [center[0] + a, center[1] - b]],
             dtype=float)
+
+    def draw(self):
+        gr.fillrect(
+            xmin=self.data[0, 0], xmax=self.data[2, 0],
+            ymin=self.data[0, 1], ymax=self.data[2, 1]
+        )
+
+    def draw_outline(self):
+        gr.polyline(
+            [
+                self.data[0, 0],
+                self.data[1, 0],
+                self.data[2, 0],
+                self.data[3, 0],
+                self.data[0, 0]
+            ],
+            [
+                self.data[0, 1],
+                self.data[1, 1],
+                self.data[2, 1],
+                self.data[3, 1],
+                self.data[0, 1]
+            ]
+        )
 
     def intersects(self, r2):
         """
@@ -22,7 +47,7 @@ class Rect:
         for p in r2:
             intersecting = True
 
-            for i in range(len(self.data)):
+            for i in range(self.data.shape[1]):
                 intersecting = intersecting and (
                     p[i] >= self.data[0, i] and p[i] <= self.data[2, i]
                 )

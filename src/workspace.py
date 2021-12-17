@@ -13,6 +13,7 @@ N_obst = 30
 obst_side = 0.05
 
 DEBUG = False
+DEBUG_COLL = True
 
 NODE_MARKER_SIZE = 0.12
 
@@ -116,11 +117,7 @@ def draw_soln(n):
 
 def draw_obstacles():
     for obstacle in obstacles:
-
-        gr.fillrect(
-            xmin=obstacle.data[0, 0], xmax=obstacle.data[3, 0],
-            ymin=obstacle.data[0, 1], ymax=obstacle.data[3, 1]
-        )
+        obstacle.draw()
 
 
 def updatews():
