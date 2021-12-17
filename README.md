@@ -3,11 +3,14 @@
 This was a term project for ENGR-E399: Autonomous Robotics taught by Prof. Lantou Liu during the Fall
 2021 semester.
 
+[Quick Demo](https://www.youtube.com/watch?v=FJg4Kc1kCQo)
+
 
 ### Installation
 
 This project has only been tested on Python 3.8.12. Since it was a class project,
-I don't intend to ever support other versions. Use pyenv or pyenv-win if you need to install.
+I don't intend to ever support other versions, though any version of 3.8 should work. 
+Use pyenv or pyenv-win if you need to install a new version of Python.
 
 After installing pyenv or pyenv-win, install required Python. Any version of 3.8 should work.
 
@@ -33,9 +36,9 @@ pipenv install
 
 You should now be able to run the app with `pipenv run python3 src/app.py`.
 
-### Theory of Operation
+### Report
 
-Checkout the Jupyter Notebook titled "Theory of Operation.ipynb" included with the app.
+Checkout the Jupyter Notebook titled "Report.ipynb" included with the app.
 
 To view:
 
