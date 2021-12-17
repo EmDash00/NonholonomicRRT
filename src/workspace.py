@@ -39,13 +39,13 @@ obstacles.append(
 )
 
 
-def is_cobst(p):
+def is_cobst(conf):
     """
     Check if a point is in C_obst.
     """
 
     for obst in obstacles:
-        if obst.intersects(p):
+        if obst.intersects(conf):
             return True
 
     return False

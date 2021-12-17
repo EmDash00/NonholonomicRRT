@@ -48,9 +48,9 @@ def valid_path(path, thetas, theta0):
         inter_conf.data += p[:2]
 
         if workspace.is_cobst(inter_conf.data):
-            return True
+            return False
 
-    return False
+    return True
 
 
 def best_primative(nn, diff):
